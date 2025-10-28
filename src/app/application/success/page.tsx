@@ -17,9 +17,6 @@ export default function ApplicationSuccessPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild className="mt-6">
-            <Link href="/">Return to Home</Link>
-          </Button>
         </CardContent>
       </Card>
     </div>
