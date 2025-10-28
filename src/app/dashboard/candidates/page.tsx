@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import { type ApplicationData } from "@/lib/schemas";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getCandidates } from "@/app/actions/client-actions";
+import { getCombinedCandidates } from "@/app/actions/candidate-actions";
 import { CandidatesActions } from "./_components/candidates-actions";
 import { format } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { getInterviewCandidates } from "@/app/actions/client-actions";
 
 // Helper to convert string to JS Date
 function toDate(dateString: string | Date | undefined): Date | null {
@@ -29,8 +30,15 @@ export default function CandidatesPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const data = await getCandidates();
-    setCandidates(data);
+    // Fetch both new candidates and those in interview status
+    const newCandidates = await getCombinedCandidates();
+    const interviewCandidates = await getInterviewCandidates();
+    const all = [...newCandidates, ...interviewCandidates]
+        // Simple de-duplication
+        .filter((c, index, self) => index === self.findIndex(t => t.id === c.id))
+        .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
+    
+    setCandidates(all);
     setLoading(false);
   }, []);
 
@@ -76,6 +84,7 @@ export default function CandidatesPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Applying For</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -87,6 +96,7 @@ export default function CandidatesPage() {
                               <TableCell className="font-medium">{candidate.firstName} {candidate.lastName}</TableCell>
                               <TableCell>{candidate.applyingFor.join(', ')}</TableCell>
                               <TableCell>{applicationDate ? format(applicationDate, 'PPP') : 'N/A'}</TableCell>
+                              <TableCell className="capitalize">{candidate.status}</TableCell>
                               <TableCell className="text-right space-x-2">
                                 <CandidatesActions candidateId={candidate.id} />
                               </TableCell>

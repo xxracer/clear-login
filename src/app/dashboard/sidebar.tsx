@@ -29,32 +29,41 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useCallback, useTransition } from "react";
 import { checkForExpiringDocuments } from "@/app/actions/client-actions";
+import { getNewCandidates } from "@/app/actions/candidate-actions";
+import { cn } from "@/lib/utils";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const [showAlert, setShowAlert] = useState(false);
+  const [showDocAlert, setShowDocAlert] = useState(false);
+  const [showNewCandidateAlert, setShowNewCandidateAlert] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const checkDocs = useCallback(async () => {
+  const checkAlerts = useCallback(async () => {
     const hasExpiring = await checkForExpiringDocuments();
-    setShowAlert(hasExpiring);
+    setShowDocAlert(hasExpiring);
+    const newCandidates = await getNewCandidates();
+    setShowNewCandidateAlert(newCandidates.length > 0);
   }, []);
 
   useEffect(() => {
     startTransition(() => {
-      checkDocs();
+      checkAlerts();
     });
     
+    // Listen for storage changes to re-check alerts
+    window.addEventListener('storage', checkAlerts);
+
     const interval = setInterval(() => {
         startTransition(() => {
-            checkDocs();
+            checkAlerts();
         });
-    }, 5 * 60 * 1000); // Poll every 5 minutes
+    }, 30 * 1000); // Poll every 30 seconds
 
     return () => {
+      window.removeEventListener('storage', checkAlerts);
       clearInterval(interval);
     };
-  }, [pathname, checkDocs]);
+  }, [pathname, checkAlerts]);
 
   return (
     <Sidebar>
@@ -84,9 +93,12 @@ export function DashboardSidebar() {
               isActive={pathname.startsWith("/dashboard/candidates")}
               tooltip="Candidates"
             >
-              <Link href="/dashboard/candidates">
-                <Users />
-                <span>Candidates</span>
+              <Link href="/dashboard/candidates" className="flex items-center justify-between w-full">
+                 <div className="flex items-center gap-2">
+                    <Users />
+                    <span>Candidates</span>
+                </div>
+                {showNewCandidateAlert && <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -125,7 +137,7 @@ export function DashboardSidebar() {
                     <FileClock />
                     <span>Expiring Docs</span>
                 </div>
-                {showAlert && <AlertTriangle className="h-4 w-4 text-yellow-400 animate-pulse" />}
+                {showDocAlert && <AlertTriangle className="h-4 w-4 text-yellow-400 animate-pulse" />}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
