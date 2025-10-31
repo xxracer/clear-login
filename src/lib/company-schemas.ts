@@ -41,7 +41,7 @@ export const companySchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   fax: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().email({ message: "Please enter a valid email." }).optional().or(z.literal('')),
   
   // A company can have multiple onboarding processes
   onboardingProcesses: z.array(onboardingProcessSchema).optional().default([]),

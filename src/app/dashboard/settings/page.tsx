@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload } from "lucide-react";
+import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { uploadKvFile, getFile, deleteFile } from "@/app/actions/kv-actions";
+import { Textarea } from "@/components/ui/textarea";
 
 
 const STANDARD_DOCS: RequiredDoc[] = [
@@ -125,7 +126,7 @@ function OnboardingProcessManager({ company, onSave, isPending }: { company: Par
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Workflow className="h-5 w-5" /> Onboarding Processes</CardTitle>
-                <CardDescription>Define reusable onboarding flows for different roles or departments.</CardDescription>
+                <CardDescription>Define reusable onboarding flows for different roles or departments. This is your Form Library.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <Accordion type="multiple" className="w-full space-y-4">
@@ -336,8 +337,22 @@ function CompanyDetailsForm({ company, onSave, isPending, onSwitchToProcesses }:
                     <Input id="company-name" placeholder="e.g., Noble Health" value={companyForEdit.name || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, name: e.target.value}))} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="company-email">Company Email</Label>
-                    <Input id="company-email" type="email" value={companyForEdit.email || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, email: e.target.value}))} />
+                    <Label htmlFor="company-email">Company Contact Email</Label>
+                    <Input id="company-email" type="email" placeholder="contact@noblehealth.com" value={companyForEdit.email || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, email: e.target.value}))} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="company-phone">Phone Number</Label>
+                        <Input id="company-phone" placeholder="(555) 123-4567" value={companyForEdit.phone || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, phone: e.target.value}))} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="company-fax">Fax Number</Label>
+                        <Input id="company-fax" placeholder="(555) 123-4568" value={companyForEdit.fax || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, fax: e.target.value}))} />
+                    </div>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="company-address">Company Address</Label>
+                    <Input id="company-address" placeholder="123 Health St, Wellness City, 90210" value={companyForEdit.address || ''} onChange={(e) => setCompanyForEdit(prev => ({...prev, address: e.target.value}))} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="company-logo">Company Logo</Label>
@@ -361,6 +376,43 @@ function CompanyDetailsForm({ company, onSave, isPending, onSwitchToProcesses }:
             </CardContent>
         </Card>
     )
+}
+
+function AiFormBuilder() {
+    return (
+        <Card className="opacity-50 pointer-events-none">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Form Builder</CardTitle>
+                <CardDescription>Describe the form you need, and let AI generate the fields for you. (Feature coming soon)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="ai-prompt">Form Description</Label>
+                    <Textarea id="ai-prompt" placeholder="e.g., 'Create a form for a delivery driver application. I need fields for name, contact info, vehicle type, and years of experience.'" disabled />
+                </div>
+                <Button disabled>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generate Form
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+function FormLibrary() {
+    return (
+        <Card className="opacity-50 pointer-events-none">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5" /> Your Form Library</CardTitle>
+                <CardDescription>Manage and reuse your saved application forms and onboarding processes. (Feature coming soon)</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="border rounded-md p-4 text-center text-muted-foreground">
+                    Your saved forms will appear here.
+                 </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 
@@ -409,6 +461,10 @@ export default function SettingsPage() {
               
               if (logoFile) {
                   const logoKey = `logo-${companyData.name?.replace(/\s+/g, '-')}-${Date.now()}`;
+                  // If there was an old logo, delete it
+                  if (dataToSave.id && dataToSave.logo) {
+                    await deleteFile(dataToSave.logo);
+                  }
                   const uploadedKey = await uploadKvFile(logoFile, logoKey);
                   dataToSave.logo = uploadedKey;
               }
@@ -418,11 +474,10 @@ export default function SettingsPage() {
               
               toast({ title: "Company Settings Saved", description: `Settings for ${result.company.name} have been saved.` });
               
-              // After saving, update state and switch view
-              setEditingCompany(result.company);
               const updatedCompanies = await getCompanies();
               setAllCompanies(updatedCompanies);
-              setView('editProcesses');
+              setEditingCompany(result.company);
+              setView('editProcesses'); // Go to process management after saving details
               
           } catch (error) {
                toast({ variant: "destructive", title: "Save Failed", description: (error as Error).message });
@@ -433,23 +488,16 @@ export default function SettingsPage() {
   const handleDeleteCurrentCompany = (id: string) => {
      startTransition(async () => {
         try {
-            // Also delete associated process images from KV
             const companyToDelete = allCompanies.find(c => c.id === id);
             if (companyToDelete?.onboardingProcesses) {
                 for (const process of companyToDelete.onboardingProcesses) {
                     if (process.applicationForm?.images) {
-                        for (const key of process.applicationForm.images) {
-                            await deleteFile(key);
-                        }
+                        for (const key of process.applicationForm.images) { await deleteFile(key); }
                     }
-                     if (process.interviewScreen?.imageUrl) {
-                        await deleteFile(process.interviewScreen.imageUrl);
-                    }
+                     if (process.interviewScreen?.imageUrl) { await deleteFile(process.interviewScreen.imageUrl); }
                 }
             }
-             if (companyToDelete?.logo) {
-                await deleteFile(companyToDelete.logo);
-            }
+             if (companyToDelete?.logo) { await deleteFile(companyToDelete.logo); }
 
             await deleteCompany(id);
             toast({ title: "Company Deleted", description: "The company has been removed."});
@@ -496,12 +544,19 @@ export default function SettingsPage() {
                 />
     }
 
-    if (view === 'editProcesses') {
-         return <OnboardingProcessManager
-                    company={editingCompany || {}}
+    if (view === 'editProcesses' && editingCompany) {
+         return (
+            <div className="space-y-6">
+                <OnboardingProcessManager
+                    company={editingCompany}
                     onSave={handleSaveCompany}
                     isPending={isPending}
                 />
+                <Separator />
+                <AiFormBuilder />
+                <FormLibrary />
+            </div>
+         );
     }
 
     return (
