@@ -395,17 +395,17 @@ export default function SettingsPage() {
           <Accordion type="multiple" className="w-full" defaultValue={[(company.onboardingProcesses?.[0]?.id || '')]}>
             {(company.onboardingProcesses || []).map((process) => (
               <AccordionItem value={process.id} key={process.id}>
-                <AccordionTrigger>
-                    <div className="flex items-center justify-between w-full pr-4">
+                <div className="flex items-center justify-between w-full pr-4 border-b">
+                    <AccordionTrigger className="flex-1 hover:no-underline py-4">
                         <div className="flex items-center gap-2">
                             <Workflow className="h-5 w-5" />
                             <span className="font-semibold">{process.name}</span>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleRemoveProcess(process.id); }} disabled={(company.onboardingProcesses?.length || 0) <= 1}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
-                </AccordionTrigger>
+                    </AccordionTrigger>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleRemoveProcess(process.id); }} disabled={(company.onboardingProcesses?.length || 0) <= 1}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                </div>
                 <AccordionContent className="p-4 space-y-6">
                     {/* Phase 1 */}
                     <Card>
