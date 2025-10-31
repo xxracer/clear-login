@@ -46,14 +46,6 @@ export const companySchema = z.object({
   
   // A company can have multiple onboarding processes
   onboardingProcesses: z.array(onboardingProcessSchema).optional().default([]),
-
-  // These are now legacy and will be migrated to the new structure.
-  // For backward compatibility, we'll keep them but mark as optional/any.
-  formCustomization: z.any().optional(),
-  phase1Images: z.any().optional(),
-  interviewImage: z.any().optional(),
-  // requiredDocs is now per-process, but we keep it for backward compatibility
-  requiredDocs: z.any().optional(),
 });
 
 export type Company = z.infer<typeof companySchema>;

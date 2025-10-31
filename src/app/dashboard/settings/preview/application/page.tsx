@@ -17,28 +17,40 @@ export default function ApplicationPreviewPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [process, setProcess] = useState<Partial<OnboardingProcess> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [customImageUrls, setCustomImageUrls] = useState<string[]>([]);
+
 
   useEffect(() => {
     async function loadSettings() {
       setLoading(true);
-      const companies = await getCompanies();
-      let companyToSet: Partial<Company> | null = null;
-      if (companies && companies.length > 0) {
-        companyToSet = companies[0];
-        setProcess(companyToSet.onboardingProcesses?.[0] || null);
-      } else {
-        companyToSet = { name: "Your Company" };
-      }
-      setCompany(companyToSet);
+      try {
+        const companies = await getCompanies();
+        let companyToSet: Partial<Company> | null = null;
+        if (companies && companies.length > 0) {
+          companyToSet = companies[0];
+          setProcess(companyToSet.onboardingProcesses?.[0] || null);
+        } else {
+          companyToSet = { name: "Your Company" };
+        }
+        setCompany(companyToSet);
 
-      if (companyToSet?.logo) {
-        const url = await getFile(companyToSet.logo);
-        setLogoUrl(url);
-      } else {
-        setLogoUrl(null)
-      }
+        if (companyToSet?.logo) {
+          const url = await getFile(companyToSet.logo);
+          setLogoUrl(url);
+        } else {
+          setLogoUrl(null)
+        }
+        
+        const imageKeys = companyToSet?.onboardingProcesses?.[0]?.applicationForm?.images || [];
+        const urls = await Promise.all(imageKeys.map(key => getFile(key).catch(() => null)));
+        setCustomImageUrls(urls.filter(Boolean) as string[]);
 
-      setLoading(false);
+
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     loadSettings();
   }, []);
@@ -53,8 +65,6 @@ export default function ApplicationPreviewPage() {
   }
   
   const useTemplate = !process || process.applicationForm?.type === 'template';
-  const customImages = process?.applicationForm?.images || [];
-
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-muted/40 p-4">
@@ -83,10 +93,10 @@ export default function ApplicationPreviewPage() {
                 ) : (
                     <Card>
                         <CardContent className="p-2 md:p-4">
-                             {customImages.length > 0 ? (
+                             {customImageUrls.length > 0 ? (
                                 <Carousel className="w-full">
                                     <CarouselContent>
-                                        {customImages.map((url, index) => (
+                                        {customImageUrls.map((url, index) => (
                                             <CarouselItem key={index}>
                                                 <Image
                                                     src={url}
@@ -98,7 +108,7 @@ export default function ApplicationPreviewPage() {
                                             </CarouselItem>
                                         ))}
                                     </CarouselContent>
-                                    {customImages.length > 1 && (
+                                    {customImageUrls.length > 1 && (
                                         <>
                                             <CarouselPrevious className="ml-12" />
                                             <CarouselNext className="mr-12" />
