@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye } from "lucide-react";
+import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 const allPossibleDocs: RequiredDoc[] = [
     { id: 'i9', label: 'I-9 Form', type: 'upload' },
@@ -322,10 +324,20 @@ export default function SettingsPage() {
       <Card>
         <CardContent className="p-4">
           <div className="border rounded-lg p-4">
-            <CardTitle className="mb-1 flex items-center gap-2 text-xl">
-              <Building className="h-5 w-5" />
-              Company Details
-            </CardTitle>
+            <div className="flex items-center gap-2">
+                <CardTitle className="mb-1 flex items-center gap-2 text-xl">
+                    <Building className="h-5 w-5" />
+                    Company Details
+                </CardTitle>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="max-w-xs">This information will be used across the application portal, including on application forms and documentation requests.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
@@ -388,7 +400,17 @@ export default function SettingsPage() {
       
       <Card>
         <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5" /> Form Library</CardTitle>
+            <div className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5" /> Form Library</CardTitle>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="max-w-xs">Manage different onboarding processes for various roles. Each process can have its own custom forms and required documents.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -413,14 +435,24 @@ export default function SettingsPage() {
                         <CardTitle className="text-lg">Phase 1: Application Form</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <RadioGroup 
-                            value={process.applicationForm?.type || 'template'} 
-                            onValueChange={(value) => handleApplicationFormChange(process.id, 'type', value)} 
-                            className="flex items-center gap-4 mt-2"
-                        >
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="template" id={`template-${process.id}`} /><Label htmlFor={`template-${process.id}`}>Use Template Application Form</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${process.id}`} /><Label htmlFor={`custom-${process.id}`}>Use Custom Application Form Images</Label></div>
-                        </RadioGroup>
+                        <div className="flex items-center gap-2">
+                            <RadioGroup 
+                                value={process.applicationForm?.type || 'template'} 
+                                onValueChange={(value) => handleApplicationFormChange(process.id, 'type', value)} 
+                                className="flex items-center gap-4 mt-2"
+                            >
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="template" id={`template-${process.id}`} /><Label htmlFor={`template-${process.id}`}>Use Template Application Form</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${process.id}`} /><Label htmlFor={`custom-${process.id}`}>Use Custom Application Form Images</Label></div>
+                            </RadioGroup>
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="max-w-xs">'Template' uses the built-in dynamic form. 'Custom' allows you to upload images/PDFs of your own form, but candidates cannot fill it out online.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
                         {process.applicationForm?.type === 'custom' && (
                           <div className="p-4 border rounded-md space-y-4 bg-background mt-2">
                             <Label className="font-semibold">Custom Form Images</Label>
@@ -533,7 +565,17 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Form Builder</CardTitle>
+            <div className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Form Builder</CardTitle>
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="max-w-xs">Describe a form in natural language, and the AI will generate a structured list of fields for you. You can then save this as a new onboarding process.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
             <CardDescription>Generate a new form structure using AI.</CardDescription>
         </CardHeader>
         <CardContent>
