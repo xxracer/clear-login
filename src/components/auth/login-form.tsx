@@ -40,7 +40,7 @@ export function LoginForm() {
       <form onSubmit={handleLogin}>
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-2xl">Welcome!</CardTitle>
-          <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
+          <CardDescription>En esta sección podrá iniciar sesión el personal autorizado.</CardDescription>
         </CardHeader>
           <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -87,5 +87,3 @@ export function LoginForm() {
     </Card>
   );
 }
-
-    
