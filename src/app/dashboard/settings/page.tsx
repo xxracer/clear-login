@@ -21,7 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const allPossibleDocs: RequiredDoc[] = [
@@ -310,7 +310,6 @@ export default function SettingsPage() {
   }
 
   return (
-    <TooltipProvider>
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
@@ -330,14 +329,22 @@ export default function SettingsPage() {
                     <Building className="h-5 w-5" />
                     Company Details
                 </CardTitle>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p className="max-w-xs">This information will be used across the application portal, including on application forms and documentation requests.</p>
-                    </TooltipContent>
-                </Tooltip>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>About Company Details</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This information will be used across the application portal, including on application forms and documentation requests to personalize the experience for your candidates.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Got it!</AlertDialogCancel>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -403,14 +410,22 @@ export default function SettingsPage() {
         <CardHeader>
             <div className="flex items-center gap-2">
                 <CardTitle className="flex items-center gap-2"><Library className="h-5 w-5" /> Form Library</CardTitle>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p className="max-w-xs">Manage different onboarding processes for various roles. Each process can have its own custom forms and required documents.</p>
-                    </TooltipContent>
-                </Tooltip>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>About the Form Library</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Manage different onboarding processes for various roles. Each process can have its own custom forms, interview screens, and required documents. You can add as many processes as you need.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Got it!</AlertDialogCancel>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
@@ -445,14 +460,22 @@ export default function SettingsPage() {
                                 <div className="flex items-center space-x-2"><RadioGroupItem value="template" id={`template-${process.id}`} /><Label htmlFor={`template-${process.id}`}>Use Template Application Form</Label></div>
                                 <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${process.id}`} /><Label htmlFor={`custom-${process.id}`}>Use Custom Application Form Images</Label></div>
                             </RadioGroup>
-                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p className="max-w-xs">'Template' uses the built-in dynamic form. 'Custom' allows you to upload images/PDFs of your own form, but candidates cannot fill it out online.</p>
-                                </TooltipContent>
-                            </Tooltip>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Template vs. Custom Forms</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            <p>'Template' uses the built-in dynamic form that candidates can fill out online.</p><br /><p>'Custom' allows you to upload images/PDFs of your own form, but candidates cannot fill it out online and must be contacted separately.</p>
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Got it!</AlertDialogCancel>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                         {process.applicationForm?.type === 'custom' && (
                           <div className="p-4 border rounded-md space-y-4 bg-background mt-2">
@@ -568,14 +591,22 @@ export default function SettingsPage() {
         <CardHeader>
             <div className="flex items-center gap-2">
                 <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Form Builder</CardTitle>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p className="max-w-xs">Describe a form in natural language, and the AI will generate a structured list of fields for you. You can then save this as a new onboarding process.</p>
-                    </TooltipContent>
-                </Tooltip>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>About the AI Form Builder</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Describe a form in natural language, and the AI will generate a structured list of fields for you. You can then save this as a new onboarding process in your library.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Got it!</AlertDialogCancel>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
             <CardDescription>Generate a new form structure using AI.</CardDescription>
         </CardHeader>
@@ -588,6 +619,7 @@ export default function SettingsPage() {
       </Card>
 
     </div>
-    </TooltipProvider>
   );
 }
+
+    
