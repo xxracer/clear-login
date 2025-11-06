@@ -5,14 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Info } from "lucide-react";
 import { type ApplicationData } from "@/lib/schemas";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getCombinedCandidates } from "@/app/actions/candidate-actions";
+import { getNewCandidates } from "@/app/actions/candidate-actions";
 import { CandidatesActions } from "./_components/candidates-actions";
 import { format } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { getInterviewCandidates } from "@/app/actions/client-actions";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Briefcase } from "lucide-react";
 
 // Helper to convert string to JS Date
 function toDate(dateString: string | Date | undefined): Date | null {
@@ -25,22 +26,61 @@ function toDate(dateString: string | Date | undefined): Date | null {
   }
 }
 
+function CandidatesTable({ candidates }: { candidates: ApplicationData[] }) {
+    if (candidates.length === 0) {
+        return (
+            <div className="text-center py-10 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-2" />
+                <h3 className="text-lg font-semibold">No Candidates Found</h3>
+                <p className="text-sm">There are no candidates in this category.</p>
+            </div>
+        );
+    }
+
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Applying For</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {candidates.map((candidate) => {
+                    const applicationDate = toDate(candidate.date);
+                    return (
+                      <TableRow key={candidate.id}>
+                          <TableCell className="font-medium">{candidate.firstName} {candidate.lastName}</TableCell>
+                          <TableCell>{candidate.applyingFor.join(', ')}</TableCell>
+                          <TableCell>{applicationDate ? format(applicationDate, 'PPP') : 'N/A'}</TableCell>
+                          <TableCell className="capitalize">{candidate.status}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <CandidatesActions candidateId={candidate.id} />
+                          </TableCell>
+                      </TableRow>
+                    )
+                })}
+            </TableBody>
+        </Table>
+    );
+}
+
 export default function CandidatesPage() {
-  const [candidates, setCandidates] = useState<ApplicationData[]>([]);
+  const [newApplicants, setNewApplicants] = useState<ApplicationData[]>([]);
+  const [interviewingCandidates, setInterviewingCandidates] = useState<ApplicationData[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    // Fetch both new candidates and those in interview status
-    const newCandidates = await getCombinedCandidates();
-    const interviewCandidates = await getInterviewCandidates();
-    const all = [...newCandidates, ...interviewCandidates]
-        // Simple de-duplication
-        .filter((c, index, self) => index === self.findIndex(t => t.id === c.id))
-        .sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
-    
-    setCandidates(all);
+    const [newApps, interviewing] = await Promise.all([
+      getNewCandidates(),
+      getInterviewCandidates(),
+    ]);
+    setNewApplicants(newApps);
+    setInterviewingCandidates(interviewing);
     setLoading(false);
   }, []);
 
@@ -61,7 +101,7 @@ export default function CandidatesPage() {
     );
   }
 
-  if (candidates.length === 0) {
+  if (newApplicants.length === 0 && interviewingCandidates.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm h-full">
         <div className="flex flex-col items-center gap-2 text-center">
@@ -96,37 +136,27 @@ export default function CandidatesPage() {
             </AlertDialogContent>
         </AlertDialog>
       </div>
-      <Card>
-        <CardContent className="p-0">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Applying For</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {candidates.map((candidate) => {
-                        const applicationDate = toDate(candidate.date);
-                        return (
-                          <TableRow key={candidate.id}>
-                              <TableCell className="font-medium">{candidate.firstName} {candidate.lastName}</TableCell>
-                              <TableCell>{candidate.applyingFor.join(', ')}</TableCell>
-                              <TableCell>{applicationDate ? format(applicationDate, 'PPP') : 'N/A'}</TableCell>
-                              <TableCell className="capitalize">{candidate.status}</TableCell>
-                              <TableCell className="text-right space-x-2">
-                                <CandidatesActions candidateId={candidate.id} />
-                              </TableCell>
-                          </TableRow>
-                        )
-                    })}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
+      
+      <Tabs defaultValue="new">
+        <TabsList>
+          <TabsTrigger value="new">New Applicants ({newApplicants.length})</TabsTrigger>
+          <TabsTrigger value="interviewing">Interviewing ({interviewingCandidates.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="new">
+            <Card>
+                <CardContent className="p-0">
+                    <CandidatesTable candidates={newApplicants} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="interviewing">
+            <Card>
+                <CardContent className="p-0">
+                    <CandidatesTable candidates={interviewingCandidates} />
+                </CardContent>
+            </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
