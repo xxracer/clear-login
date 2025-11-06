@@ -333,13 +333,7 @@ export default function SettingsPage() {
       <Card>
         <CardContent className="p-4">
           <div className="border rounded-lg p-4 relative">
-             {showCompanyDetailsHint && (
-                <div className="absolute -top-12 right-0 flex items-center gap-2 p-2 bg-background rounded-md shadow-lg animate-pulse z-10">
-                    <p className="text-sm font-medium text-primary">Click here first!</p>
-                    <ArrowRight className="h-5 w-5 text-primary"/>
-                </div>
-            )}
-            <div className="flex items-center gap-2">
+             <div className="flex items-center gap-2 relative">
                 <CardTitle className="mb-1 flex items-center gap-2 text-xl">
                     <Building className="h-5 w-5" />
                     Company Details
@@ -360,6 +354,12 @@ export default function SettingsPage() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+                 {showCompanyDetailsHint && (
+                    <div className="absolute -top-5 left-40 flex items-center gap-2 p-2 bg-background rounded-md animate-pulse z-10">
+                        <p className="text-sm font-medium text-primary">Click here first!</p>
+                        <ArrowRight className="h-5 w-5 text-primary"/>
+                    </div>
+                )}
             </div>
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
             <fieldset disabled={showCompanyDetailsHint} className="grid grid-cols-1 md:grid-cols-2 gap-8 disabled:opacity-50">
@@ -652,6 +652,8 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
 
     
 
