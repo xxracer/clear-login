@@ -4,7 +4,7 @@
 import { getEmployees, updateCandidateStatus, deleteCandidate, deleteEmployeeFile, updateCandidateWithFileUpload } from "@/app/actions/client-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApplicationData, DocumentFile } from "@/lib/schemas";
-import { Briefcase, UserPlus, Folder, User, Search, Trash2, Archive, Upload, Loader2, File as FileIcon } from "lucide-react";
+import { Briefcase, UserPlus, Folder, User, Search, Trash2, Archive, Upload, Loader2, File as FileIcon, Info } from "lucide-react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -21,7 +21,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 
 type InactiveInfo = {
@@ -360,7 +360,25 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-headline font-bold text-foreground">Employees</h1>
+        <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-headline font-bold text-foreground">Employees</h1>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-4 w-4 text-muted-foreground" /></Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Employees</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This is the directory for all active and inactive employees. You can view their details, manage their documents, and update their status. Use the "Add Legacy Employee" button to add employees from old paper records using AI extraction.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction>Got it!</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
                 <Button>

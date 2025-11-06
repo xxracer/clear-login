@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { type ApplicationData } from "@/lib/schemas";
 import { add, isBefore, format } from "date-fns";
-import { AlertTriangle, UserCheck, Mail } from "lucide-react";
+import { AlertTriangle, UserCheck, Mail, Info } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Helper to convert string to JS Date
 function toDate(dateString: string | Date | undefined): Date | null {
@@ -94,7 +95,25 @@ export default function NewHiresPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-headline font-bold text-foreground">New Hires</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-3xl font-headline font-bold text-foreground">New Hires</h1>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-4 w-4 text-muted-foreground" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>New Hires</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This page lists candidates who have successfully passed the interview and have been marked as "New Hire". Here you can monitor their final documentation status and eventually mark them as active employees.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction>Got it!</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </div>
       <Card>
         <CardContent className="p-0">
             <Table>

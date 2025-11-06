@@ -3,13 +3,14 @@
 
 import { useEffect, useState } from 'react';
 import { CandidateView } from "@/components/dashboard/candidate-view";
-import { Settings, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Settings, Loader2, Link as LinkIcon, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getCompanies } from '../actions/company-actions';
 import { type Company } from '@/lib/company-schemas';
 import { CopyApplicationLink } from '@/components/dashboard/copy-link';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 export default function DashboardPage() {
@@ -68,9 +69,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <h1 className="text-3xl font-headline font-bold text-foreground">Welcome to the Onboard Panel</h1>
+                <div className="flex items-center gap-2">
+                    <h1 className="text-3xl font-headline font-bold text-foreground">Welcome to the Onboard Panel</h1>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-4 w-4 text-muted-foreground" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Dashboard Overview</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This is your main dashboard. From here, you can see your active candidate pipeline and quickly access application links to share with potential candidates.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogAction>Got it!</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
                 <p className="text-muted-foreground">
                     Manage candidates or share application links to start onboarding.
                 </p>

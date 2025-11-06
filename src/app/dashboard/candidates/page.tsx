@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, Info } from "lucide-react";
 import { type ApplicationData } from "@/lib/schemas";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCombinedCandidates } from "@/app/actions/candidate-actions";
@@ -11,6 +11,8 @@ import { format } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getInterviewCandidates } from "@/app/actions/client-actions";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 // Helper to convert string to JS Date
 function toDate(dateString: string | Date | undefined): Date | null {
@@ -75,7 +77,25 @@ export default function CandidatesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-3xl font-headline font-bold text-foreground">Candidates</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="text-3xl font-headline font-bold text-foreground">Candidates</h1>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-4 w-4 text-muted-foreground" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Candidates</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This page lists all new applicants who have submitted an application, as well as candidates who are currently in the interview process. From here, you can view their application, reject them, or move them forward to the next stage.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction>Got it!</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </div>
       <Card>
         <CardContent className="p-0">
             <Table>
