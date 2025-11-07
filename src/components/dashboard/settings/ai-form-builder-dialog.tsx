@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -13,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateFormFromOptions } from '@/ai/flows/generate-form-from-options-flow';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
+import { FormItem } from '@/components/ui/form';
 
 const personalInfoOptions = [
     { id: 'fullName', label: 'Full Name' },
@@ -140,15 +140,15 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                         <div className="space-y-2">
                             <Label>Do you want to include a space for the company logo?</Label>
                             <RadioGroup value={includeLogo} onValueChange={setIncludeLogo} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="yes" id="logo-yes" /><Label htmlFor="logo-yes" className="ml-2">Yes</Label></FormItem>
-                                <FormItem><RadioGroupItem value="no" id="logo-no" /><Label htmlFor="logo-no" className="ml-2">No</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="logo-yes" /><Label htmlFor="logo-yes" className="ml-2 font-normal">Yes</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="logo-no" /><Label htmlFor="logo-no" className="ml-2 font-normal">No</Label></FormItem>
                             </RadioGroup>
                         </div>
                         <div className="space-y-2">
                             <Label>Is this form for one specific company or multiple companies?</Label>
                             <RadioGroup value={isMultiCompany} onValueChange={setIsMultiCompany} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="no" id="comp-no" /><Label htmlFor="comp-no" className="ml-2">One company</Label></FormItem>
-                                <FormItem><RadioGroupItem value="yes" id="comp-yes" /><Label htmlFor="comp-yes" className="ml-2">Multiple</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="comp-no" /><Label htmlFor="comp-no" className="ml-2 font-normal">One company</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="comp-yes" /><Label htmlFor="comp-yes" className="ml-2 font-normal">Multiple</Label></FormItem>
                             </RadioGroup>
                         </div>
                     </div>
@@ -182,29 +182,29 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                         <div className="space-y-2">
                             <Label>Do you need to include a section for personal/professional references?</Label>
                              <RadioGroup value={includeReferences} onValueChange={setIncludeReferences} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="yes" id="ref-yes" /><Label htmlFor="ref-yes" className="ml-2">Yes</Label></FormItem>
-                                <FormItem><RadioGroupItem value="no" id="ref-no" /><Label htmlFor="ref-no" className="ml-2">No</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="ref-yes" /><Label htmlFor="ref-yes" className="ml-2 font-normal">Yes</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="ref-no" /><Label htmlFor="ref-no" className="ml-2 font-normal">No</Label></FormItem>
                             </RadioGroup>
                         </div>
                         <div className="space-y-2">
                             <Label>Do you need to add data about where the person studied?</Label>
                              <RadioGroup value={includeEducation} onValueChange={setIncludeEducation} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="yes" id="edu-yes" /><Label htmlFor="edu-yes" className="ml-2">Yes</Label></FormItem>
-                                <FormItem><RadioGroupItem value="no" id="edu-no" /><Label htmlFor="edu-no" className="ml-2">No</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="edu-yes" /><Label htmlFor="edu-yes" className="ml-2 font-normal">Yes</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="edu-no" /><Label htmlFor="edu-no" className="ml-2 font-normal">No</Label></FormItem>
                             </RadioGroup>
                         </div>
                         <div className="space-y-2">
                             <Label>Do you need to add references from previous jobs?</Label>
                             <RadioGroup value={includeEmploymentHistory} onValueChange={setIncludeEmploymentHistory} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="yes" id="emp-yes" /><Label htmlFor="emp-yes" className="ml-2">Yes</Label></FormItem>
-                                <FormItem><RadioGroupItem value="no" id="emp-no" /><Label htmlFor="emp-no" className="ml-2">No</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="emp-yes" /><Label htmlFor="emp-yes" className="ml-2 font-normal">Yes</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="emp-no" /><Label htmlFor="emp-no" className="ml-2 font-normal">No</Label></FormItem>
                             </RadioGroup>
                         </div>
                          <div className="space-y-2">
                             <Label>Do you need to add credentials (licenses, certifications, etc.)?</Label>
                             <RadioGroup value={includeCredentials} onValueChange={setIncludeCredentials} className="flex gap-4">
-                                <FormItem><RadioGroupItem value="yes" id="cred-yes" /><Label htmlFor="cred-yes" className="ml-2">Yes</Label></FormItem>
-                                <FormItem><RadioGroupItem value="no" id="cred-no" /><Label htmlFor="cred-no" className="ml-2">No</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="cred-yes" /><Label htmlFor="cred-yes" className="ml-2 font-normal">Yes</Label></FormItem>
+                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="cred-no" /><Label htmlFor="cred-no" className="ml-2 font-normal">No</Label></FormItem>
                             </RadioGroup>
                         </div>
                     </div>
@@ -250,3 +250,4 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
         </Dialog>
     );
 }
+    
