@@ -29,7 +29,7 @@ const FormFieldSchema = z.object({
 });
 
 const GenerateFormOutputSchema = z.object({
-  formName: z.string().describe("A suitable name for the generated form (e.g., 'Delivery Driver Application')."),
+  formName: z.string().describe("A suitable and descriptive name for the generated form (e.g., 'Delivery Driver Application Form')."),
   fields: z.array(FormFieldSchema).describe("An array of objects, where each object represents a field in the form.")
 });
 export type GenerateFormOutput = z.infer<typeof GenerateFormOutputSchema>;
@@ -49,7 +49,7 @@ const prompt = ai.definePrompt({
 
   Generate a list of fields for this form. For each field, provide a unique ID, a label, an appropriate input type, and whether it is required.
   For fields that should have a predefined set of choices, use the 'select' type and provide the options.
-  Also, provide a suitable name for the overall form.`,
+  Also, provide a suitable and descriptive name for the overall form based on its purpose.`,
 });
 
 const generateFormFlow = ai.defineFlow(

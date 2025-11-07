@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,10 +10,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateFormFromOptions } from '@/ai/flows/generate-form-from-options-flow';
+import { generateFormFromOptions, GenerateFormOptionsOutput } from '@/ai/flows/generate-form-from-options-flow';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { FormItem } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const personalInfoOptions = [
     { id: 'fullName', label: 'Full Name' },
@@ -33,7 +36,8 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [generatedForm, setGeneratedForm] = useState<{ name: string; date: Date } | null>(null);
+    const [generatedForm, setGeneratedForm] = useState<{ name: string; date: Date; fields: GenerateFormOptionsOutput['fields'] } | null>(null);
+
 
     // Form State
     const [formPurpose, setFormPurpose] = useState('');
@@ -85,8 +89,8 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                 includeCredentials: includeCredentials === 'yes',
             });
             
-            setGeneratedForm({ name: result.formName, date: new Date() });
-            toast({ title: 'Form Generated!', description: 'Your new form structure is ready.' });
+            setGeneratedForm({ name: result.formName, date: new Date(), fields: result.fields });
+            toast({ title: 'Form Generated!', description: 'Your new form structure is ready to preview.' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
         } finally {
@@ -112,18 +116,51 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
         
         if (generatedForm) {
             return (
-                 <div className="space-y-6 p-4">
+                 <div className="space-y-6 p-4 max-h-[70vh] overflow-y-auto">
                     <Alert variant="default" className="border-green-500/50">
                         <AlertTitle className="font-semibold text-green-700">Form Created Successfully!</AlertTitle>
                         <AlertDescription>
-                            <p>Name: <span className="font-medium">{generatedForm.name}</span></p>
-                            <p>Date: {format(generatedForm.date, 'PPP')}</p>
-                            <p>Type: Custom Form</p>
+                            Review the preview below. If you're happy with it, click "Confirm and Save" to add it to your Form Library.
                         </AlertDescription>
                     </Alert>
-                    <p className="text-sm text-muted-foreground">This form has been added to your Form Library. You can now go there to upload images for it or customize it further.</p>
-                    <div className="flex justify-end">
-                        <Button onClick={handleConfirmAndSave}>Confirm and Close</Button>
+
+                    <div className="border rounded-lg p-4 space-y-4">
+                        <h3 className="text-lg font-semibold">{generatedForm.name}</h3>
+                        <p className="text-sm text-muted-foreground">Date: {format(generatedForm.date, 'PPP')} | Type: Custom Form</p>
+                        
+                        <div className="mt-4 pt-4 border-t space-y-4">
+                            <h4 className="font-medium">Form Preview:</h4>
+                            <div className="space-y-4 rounded-md border p-4 bg-muted/20">
+                                {generatedForm.fields.map(field => (
+                                    <div key={field.id}>
+                                        <Label htmlFor={field.id}>{field.label}{field.required && <span className="text-destructive">*</span>}</Label>
+                                        {field.type === 'text' && <Input id={field.id} />}
+                                        {field.type === 'email' && <Input id={field.id} type="email" />}
+                                        {field.type === 'number' && <Input id={field.id} type="number" />}
+                                        {field.type === 'phone' && <Input id={field.id} type="tel" />}
+                                        {field.type === 'date' && <Input id={field.id} type="date" />}
+                                        {field.type === 'textarea' && <Textarea id={field.id} />}
+                                        {field.type === 'checkbox' && <div className="flex items-center space-x-2 pt-2"><Checkbox id={field.id} /><label htmlFor={field.id} className="text-sm font-normal">I agree</label></div>}
+                                        {field.type === 'select' && (
+                                            <Select>
+                                                <SelectTrigger id={field.id}>
+                                                    <SelectValue placeholder="Select an option" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {(field.options || []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div className="flex justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setGeneratedForm(null)}>Back to Editor</Button>
+                        <Button onClick={handleConfirmAndSave}>Confirm and Save</Button>
                     </div>
                 </div>
             )
@@ -219,9 +256,9 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle>AI Form Builder</DialogTitle>
-                    <DialogDescription>
+                    {!generatedForm && <DialogDescription>
                         Answer a few questions and the AI will generate a form structure for you. (Step {step} of 3)
-                    </DialogDescription>
+                    </DialogDescription>}
                 </DialogHeader>
                 
                 <div className="py-4">
