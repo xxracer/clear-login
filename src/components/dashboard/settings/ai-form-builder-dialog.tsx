@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { FormItem } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { AiFormField } from '@/lib/company-schemas';
 
 const personalInfoOptions = [
     { id: 'fullName', label: 'Full Name' },
@@ -29,7 +30,7 @@ type AiFormBuilderDialogProps = {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     companyName?: string;
-    onFormGenerated: (name: string, type: 'template' | 'custom') => void;
+    onFormGenerated: (name: string, fields: AiFormField[]) => void;
 }
 
 export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormGenerated }: AiFormBuilderDialogProps) {
@@ -100,7 +101,7 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     
     const handleConfirmAndSave = () => {
         if (!generatedForm) return;
-        onFormGenerated(generatedForm.name, 'custom');
+        onFormGenerated(generatedForm.name, generatedForm.fields);
         handleOpenChange(false);
     }
 
@@ -287,4 +288,3 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
         </Dialog>
     );
 }
-    

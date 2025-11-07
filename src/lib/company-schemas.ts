@@ -8,12 +8,24 @@ export const requiredDocSchema = z.object({
 });
 export type RequiredDoc = z.infer<typeof requiredDocSchema>;
 
+// Schema for a single field in an AI-generated form
+export const aiFormFieldSchema = z.object({
+    id: z.string(),
+    label: z.string(),
+    type: z.enum(['text', 'number', 'date', 'email', 'phone', 'textarea', 'select', 'checkbox']),
+    options: z.array(z.string()).optional(),
+    required: z.boolean(),
+});
+export type AiFormField = z.infer<typeof aiFormFieldSchema>;
+
+
 // Represents the configuration for a single application form (Phase 1)
 const applicationFormSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: z.enum(['template', 'custom']).default('template'),
-  images: z.array(z.string()).optional(), // URLs/keys to images in Vercel Blob/KV
+  images: z.array(z.string()).optional(), // URLs/keys to images for custom forms
+  fields: z.array(aiFormFieldSchema).optional(), // Fields for AI-generated forms
 });
 export type ApplicationForm = z.infer<typeof applicationFormSchema>;
 

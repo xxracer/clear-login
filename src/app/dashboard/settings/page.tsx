@@ -10,28 +10,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
 import { getCompanies, createOrUpdateCompany } from "@/app/actions/company-actions";
-import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc } from "@/lib/company-schemas";
+import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType } from "@/lib/company-schemas";
 import { getFile, uploadKvFile, deleteFile } from "@/app/actions/kv-actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateIdForServer } from "@/lib/server-utils";
-import { generateForm } from "@/ai/flows/generate-form-flow";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { File as FileIcon } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
 import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
-
-
-const allPossibleDocs: RequiredDoc[] = [
-    { id: 'i9', label: 'I-9 Form', type: 'upload' },
-    { id: 'w4', label: 'W-4 Form', type: 'upload' },
-    { id: 'proofOfIdentity', label: 'Proof of Identity (ID Card)', type: 'upload' },
-    { id: 'educationalDiplomas', label: 'Educational Diplomas/Certificates', type: 'upload' },
-];
+import { ApplicationForm } from "@/components/dashboard/application-form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
 
 // Main component for the settings page
@@ -45,9 +38,6 @@ export default function SettingsPage() {
 
   // AI Form Builder state
   const [isAiBuilderOpen, setIsAiBuilderOpen] = useState(false);
-
-  const [isAddDocDialogOpen, setIsAddDocDialogOpen] = useState(false);
-  const [selectedProcessForDoc, setSelectedProcessForDoc] = useState<string | null>(null);
 
   // State for alert dialogs
   const [isCompanyDetailsDialogOpen, setCompanyDetailsDialogOpen] = useState(false);
@@ -69,8 +59,8 @@ export default function SettingsPage() {
       if (!firstCompany.onboardingProcesses || firstCompany.onboardingProcesses.length === 0) {
           firstCompany.onboardingProcesses = [{
               id: generateIdForServer(),
-              name: "Custom Form 1",
-              applicationForm: { id: generateIdForServer(), name: "Default Template Form", type: 'template', images: [] },
+              name: "Default Process",
+              applicationForm: { id: generateIdForServer(), name: "Default Template Form", type: 'template', images: [], fields: [] },
               interviewScreen: { type: 'template' },
               requiredDocs: [],
           }];
@@ -108,7 +98,7 @@ export default function SettingsPage() {
   const handleApplicationFormChange = (processId: string, field: string, value: any) => {
       const updatedProcesses = company.onboardingProcesses?.map(p => {
           if (p.id === processId) {
-              const updatedAppForm = { ...(p.applicationForm || {}), [field]: value };
+              const updatedAppForm = { ...(p.applicationForm || { id: generateIdForServer(), name: "New Form", type: 'template', images: [], fields: [] }), [field]: value };
               return { ...p, applicationForm: updatedAppForm };
           }
           return p;
@@ -116,16 +106,6 @@ export default function SettingsPage() {
       handleFieldChange('onboardingProcesses', updatedProcesses);
   };
 
-  const handleInterviewScreenChange = (processId: string, field: string, value: any) => {
-      const updatedProcesses = company.onboardingProcesses?.map(p => {
-          if (p.id === processId) {
-              const updatedInterviewScreen = { ...(p.interviewScreen || {}), [field]: value };
-              return { ...p, interviewScreen: updatedInterviewScreen };
-          }
-          return p;
-      }) || [];
-      handleFieldChange('onboardingProcesses', updatedProcesses);
-  };
 
   const handleLogoChange = (file: File | null) => {
     if (file) {
@@ -143,12 +123,11 @@ export default function SettingsPage() {
       startTransition(async () => {
           try {
               const imageKey = `form-image-${company.name?.replace(/\s+/g, '-')}-${processId}-${Date.now()}`;
-              await uploadKvFile(file, imageKey); // uploadKvFile returns the key now
+              await uploadKvFile(file, imageKey);
               
               const updatedProcesses = company.onboardingProcesses?.map(p => {
                   if (p.id === processId) {
-                      // The applicationForm might not exist, so we ensure it does.
-                      const appForm = p.applicationForm || { id: generateIdForServer(), name: "Custom Form", type: 'custom', images: [] };
+                      const appForm = p.applicationForm || { id: generateIdForServer(), name: "Custom Form", type: 'custom', images: [], fields: [] };
                       const currentImages = appForm.images || [];
                       const updatedAppForm = { ...appForm, images: [...currentImages, imageKey] };
                       return { ...p, applicationForm: updatedAppForm };
@@ -164,23 +143,6 @@ export default function SettingsPage() {
       });
   };
   
-    const handleInterviewImageUpload = async (processId: string, file: File) => {
-      if (!company.name) {
-          toast({ variant: 'destructive', title: "Company Name Required", description: "Please enter a company name before uploading images." });
-          return;
-      }
-      startTransition(async () => {
-          try {
-              const imageKey = `interview-image-${company.name?.replace(/\s+/g, '-')}-${processId}-${Date.now()}`;
-              const imageUrl = await uploadKvFile(file, imageKey);
-              handleInterviewScreenChange(processId, 'imageUrl', imageUrl);
-              toast({ title: "Image Uploaded", description: "The interview background has been updated." });
-          } catch (error) {
-              toast({ variant: "destructive", title: "Upload Failed", description: (error as Error).message });
-          }
-      });
-    };
-
 
   const handleRemoveCustomFormImage = (processId: string, imageUrl: string) => {
       startTransition(async () => {
@@ -202,11 +164,11 @@ export default function SettingsPage() {
       });
   }
 
-  const handleAddNewProcess = (name: string, type: 'template' | 'custom' = 'template') => {
+  const handleAddNewProcess = (name: string, fields: AppFormType['fields']) => {
       const newProcess: OnboardingProcess = {
           id: generateIdForServer(),
           name: name,
-          applicationForm: { id: generateIdForServer(), name: name, type: type, images: [] },
+          applicationForm: { id: generateIdForServer(), name: name, type: 'custom', images: [], fields: fields },
           interviewScreen: { type: 'template' },
           requiredDocs: [],
       };
@@ -215,51 +177,6 @@ export default function SettingsPage() {
       setActiveProcessId(newProcess.id);
   };
   
-  const handleRemoveProcess = (processId: string) => {
-      // Prevent deleting the last process
-      if ((company.onboardingProcesses?.length || 0) <= 1) {
-          toast({ variant: 'destructive', title: 'Cannot Delete', description: 'You must have at least one onboarding process.' });
-          return;
-      }
-      const updatedProcesses = company.onboardingProcesses?.filter(p => p.id !== processId) || [];
-      handleFieldChange('onboardingProcesses', updatedProcesses);
-  };
-  
-  const handleAddRequiredDoc = (docId: string) => {
-      if (!selectedProcessForDoc || !docId) return;
-
-      const docToAdd = allPossibleDocs.find(d => d.id === docId);
-      if (!docToAdd) return;
-
-      const updatedProcesses = company.onboardingProcesses?.map(p => {
-          if (p.id === selectedProcessForDoc) {
-              const currentDocs = p.requiredDocs || [];
-              // Avoid duplicates
-              if (currentDocs.some(d => d.id === docId)) {
-                  toast({ variant: 'destructive', title: 'Document Already Added' });
-                  return p;
-              }
-              return { ...p, requiredDocs: [...currentDocs, docToAdd] };
-          }
-          return p;
-      }) || [];
-      handleFieldChange('onboardingProcesses', updatedProcesses);
-      setIsAddDocDialogOpen(false);
-      setSelectedProcessForDoc(null);
-  };
-  
-  const handleRemoveRequiredDoc = (processId: string, docId: string) => {
-      const updatedProcesses = company.onboardingProcesses?.map(p => {
-          if (p.id === processId) {
-              const updatedDocs = p.requiredDocs?.filter(d => d.id !== docId) || [];
-              return { ...p, requiredDocs: updatedDocs };
-          }
-          return p;
-      }) || [];
-      handleFieldChange('onboardingProcesses', updatedProcesses);
-  };
-
-
 
   const handleSave = () => {
     startTransition(async () => {
@@ -348,14 +265,14 @@ export default function SettingsPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    {showCompanyDetailsHint && (
-                        <div className="flex items-center gap-2 animate-pulse ml-2">
-                            <p className="text-sm font-medium text-primary">Click here first!</p>
-                            <ArrowRight className="h-5 w-5 text-primary -scale-x-100" />
-                        </div>
-                    )}
                 </div>
 
+                {showCompanyDetailsHint && (
+                    <div className="flex items-center gap-2 animate-pulse absolute left-1/2 -translate-x-1/2 top-4">
+                        <p className="text-sm font-medium text-primary">Click here first!</p>
+                        <ArrowRight className="h-5 w-5 text-primary -scale-x-100" />
+                    </div>
+                )}
             </div>
 
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
@@ -482,46 +399,72 @@ export default function SettingsPage() {
                         className="flex items-center gap-4 mt-2"
                     >
                         <div className="flex items-center space-x-2"><RadioGroupItem value="template" id={`template-${activeProcess.id}`} /><Label htmlFor={`template-${activeProcess.id}`}>Use Template Application Form</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${activeProcess.id}`} /><Label htmlFor={`custom-${activeProcess.id}`}>Use Custom Application Form Images</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${activeProcess.id}`} /><Label htmlFor={`custom-${activeProcess.id}`}>Use Custom Form</Label></div>
                     </RadioGroup>
                 </div>
 
-                {activeProcess.applicationForm?.type === 'custom' && (
-                  <div className="p-4 border rounded-md space-y-4 bg-muted/20">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-semibold">Custom Form Images (PDF/Image)</Label>
-                       <AlertDialog open={isCustomFormInfoOpen} onOpenChange={setIsCustomFormInfoOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Custom Application Forms</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    You can upload images or a PDF of your existing paper application form. Candidates will see these images but will not be able to fill them out online. You will need to contact them separately to complete the application.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogAction>Got it!</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    </div>
-                     <div className="space-y-2">
-                        {(activeProcess.applicationForm?.images || []).map((imgKey) => (
-                            <div key={imgKey} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                <div className="flex items-center gap-2 text-sm truncate"><FileIcon className="h-4 w-4" /><span className="truncate">{imgKey.split('/').pop()}</span></div>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveCustomFormImage(activeProcess.id, imgKey)} disabled={isPending}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <div className="p-4 border rounded-md space-y-4 bg-muted/20 min-h-[300px]">
+                    <Label className="font-semibold">Form Preview</Label>
+                    <div className="opacity-70 pointer-events-none scale-[0.9] origin-top-left">
+                        {activeProcess.applicationForm?.type === 'template' && (
+                            <ApplicationForm companyName={company.name || 'Your Company'} />
+                        )}
+                        {activeProcess.applicationForm?.type === 'custom' && (
+                            <div>
+                                {activeProcess.applicationForm?.images && activeProcess.applicationForm.images.length > 0 && (
+                                     <div className="space-y-2">
+                                        <Carousel className="w-full">
+                                            <CarouselContent>
+                                                {activeProcess.applicationForm.images.map((imgKey) => (
+                                                    <CarouselItem key={imgKey}>
+                                                        <Image src={imgKey} alt="Form preview" width={500} height={700} className="w-full h-auto rounded-md object-contain" />
+                                                    </CarouselItem>
+                                                ))}
+                                            </CarouselContent>
+                                        </Carousel>
+                                        {(activeProcess.applicationForm?.images || []).map((imgKey) => (
+                                            <div key={imgKey} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                                                <div className="flex items-center gap-2 text-sm truncate"><FileIcon className="h-4 w-4" /><span className="truncate">{imgKey.split('/').pop()}</span></div>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 pointer-events-auto" onClick={() => handleRemoveCustomFormImage(activeProcess!.id, imgKey)} disabled={isPending}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                 {(activeProcess.applicationForm?.fields && activeProcess.applicationForm.fields.length > 0) && (
+                                    <div className="space-y-4">
+                                        {activeProcess.applicationForm.fields.map(field => (
+                                            <div key={field.id}>
+                                                <Label htmlFor={field.id}>{field.label}{field.required && <span className="text-destructive">*</span>}</Label>
+                                                {field.type === 'text' && <Input id={field.id} />}
+                                                {field.type === 'email' && <Input id={field.id} type="email" />}
+                                                {field.type === 'number' && <Input id={field.id} type="number" />}
+                                                {field.type === 'phone' && <Input id={field.id} type="tel" />}
+                                                {field.type === 'date' && <Input id={field.id} type="date" />}
+                                                {field.type === 'textarea' && <Textarea id={field.id} />}
+                                                {field.type === 'checkbox' && <div className="flex items-center space-x-2 pt-2"><Checkbox id={field.id} /><label htmlFor={field.id} className="text-sm font-normal">I agree</label></div>}
+                                                {field.type === 'select' && (
+                                                    <Select>
+                                                        <SelectTrigger id={field.id}><SelectValue placeholder="Select an option" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {(field.options || []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {(activeProcess.applicationForm?.images?.length === 0 && activeProcess.applicationForm?.fields?.length === 0) && (
+                                     <div className="pointer-events-auto">
+                                        <p className="text-sm text-muted-foreground text-center py-4">No images or AI fields for this custom form.</p>
+                                        <Label htmlFor={`upload-${activeProcess.id}`} className="flex-grow"><Button asChild variant="outline" className="w-full cursor-pointer"><span><Upload className="mr-2 h-4 w-4" /> Upload PDF or Image</span></Button></Label>
+                                        <Input id={`upload-${activeProcess.id}`} type="file" className="hidden" accept="image/*,application/pdf" onChange={(e) => e.target.files && handleCustomFormImageUpload(activeProcess!.id, e.target.files[0])} disabled={isPending}/>
+                                    </div>
+                                )}
                             </div>
-                        ))}
+                        )}
                     </div>
-                    {(!activeProcess.applicationForm?.images || activeProcess.applicationForm.images.length === 0) && <p className="text-sm text-muted-foreground text-center py-4">No images uploaded.</p>}
-                     <div className="flex items-center gap-2">
-                        <Label htmlFor={`upload-${activeProcess.id}`} className="flex-grow"><Button asChild variant="outline" className="w-full cursor-pointer"><span><Upload className="mr-2 h-4 w-4" /> Upload PDF or Image</span></Button></Label>
-                        <Input id={`upload-${activeProcess.id}`} type="file" className="hidden" accept="image/*,application/pdf" onChange={(e) => e.target.files && handleCustomFormImageUpload(activeProcess.id, e.target.files[0])} disabled={isPending}/>
-                    </div>
-                  </div>
-                )}
+                </div>
                  <div className="flex justify-end">
                     <Button onClick={handleSave}>
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -569,8 +512,8 @@ export default function SettingsPage() {
                 isOpen={isAiBuilderOpen} 
                 onOpenChange={setIsAiBuilderOpen}
                 companyName={company.name}
-                onFormGenerated={(name) => {
-                    handleAddNewProcess(name, 'custom');
+                onFormGenerated={(name, fields) => {
+                    handleAddNewProcess(name, fields);
                     toast({
                         title: "AI Form Created!",
                         description: `"${name}" has been added to your Form Library. You can now customize it.`
@@ -582,5 +525,4 @@ export default function SettingsPage() {
 
     </div>
   );
-
-    
+}
