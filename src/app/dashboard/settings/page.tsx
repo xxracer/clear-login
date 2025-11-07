@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info, ArrowRight } from "lucide-react";
+import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info, ArrowRight, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -243,9 +243,9 @@ export default function SettingsPage() {
       <Card>
         <CardContent className="p-4">
           <div className="border rounded-lg p-4 relative">
-             <div className="flex items-center justify-between">
+            <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center gap-2">
-                    <CardTitle className="mb-1 flex items-center gap-2 text-xl">
+                    <CardTitle className="flex items-center gap-2 text-xl">
                         <Building className="h-5 w-5" />
                         Company Details
                     </CardTitle>
@@ -268,9 +268,9 @@ export default function SettingsPage() {
                 </div>
 
                 {showCompanyDetailsHint && (
-                    <div className="flex items-center gap-2 animate-pulse absolute left-1/2 -translate-x-1/2 top-4">
-                        <p className="text-sm font-medium text-primary">Click here first!</p>
-                        <ArrowRight className="h-5 w-5 text-primary -scale-x-100" />
+                    <div className="flex items-center gap-2 text-primary animate-pulse">
+                        <p className="text-sm font-medium">Click here first!</p>
+                        <ArrowRight className="h-5 w-5 -scale-x-100" />
                     </div>
                 )}
             </div>
@@ -383,14 +383,23 @@ export default function SettingsPage() {
           <div className="md:col-span-2 border rounded-lg p-4 space-y-6">
             {activeProcess ? (
               <>
-                <div>
-                  <Label htmlFor="form-name">Form Name</Label>
-                  <Input 
-                    id="form-name" 
-                    value={activeProcess.name}
-                    onChange={(e) => handleProcessChange(activeProcess.id, 'name', e.target.value)}
-                  />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="form-name">Form Name</Label>
+                    <Input 
+                      id="form-name" 
+                      value={activeProcess.name}
+                      onChange={(e) => handleProcessChange(activeProcess.id, 'name', e.target.value)}
+                    />
+                  </div>
+                   <Button variant="outline" asChild>
+                      <Link href="/dashboard/settings/preview/application" target="_blank">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview Form
+                      </Link>
+                    </Button>
                 </div>
+
 
                 <div className="space-y-2">
                     <RadioGroup 
@@ -399,72 +408,41 @@ export default function SettingsPage() {
                         className="flex items-center gap-4 mt-2"
                     >
                         <div className="flex items-center space-x-2"><RadioGroupItem value="template" id={`template-${activeProcess.id}`} /><Label htmlFor={`template-${activeProcess.id}`}>Use Template Application Form</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="custom" id={`custom-${activeProcess.id}`} /><Label htmlFor={`custom-${activeProcess.id}`}>Use Custom Form</Label></div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="custom" id={`custom-${activeProcess.id}`} />
+                            <Label htmlFor={`custom-${activeProcess.id}`}>Use Custom Form</Label>
+                             <AlertDialog open={isCustomFormInfoOpen} onOpenChange={setIsCustomFormInfoOpen}>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-5 w-5"><Info className="h-3 w-3 text-muted-foreground cursor-pointer" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Custom Forms</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This option allows you to use your own forms. You can upload images or PDFs of your existing forms. The system will display these images to the applicants. Note: Data from these forms is not automatically captured.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogAction>Got it!</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                     </RadioGroup>
                 </div>
-
-                <div className="p-4 border rounded-md space-y-4 bg-muted/20 min-h-[300px]">
-                    <Label className="font-semibold">Form Preview</Label>
-                    <div className="opacity-70 pointer-events-none scale-[0.9] origin-top-left">
-                        {activeProcess.applicationForm?.type === 'template' && (
-                            <ApplicationForm companyName={company.name || 'Your Company'} />
-                        )}
-                        {activeProcess.applicationForm?.type === 'custom' && (
-                            <div>
-                                {activeProcess.applicationForm?.images && activeProcess.applicationForm.images.length > 0 && (
-                                     <div className="space-y-2">
-                                        <Carousel className="w-full">
-                                            <CarouselContent>
-                                                {activeProcess.applicationForm.images.map((imgKey) => (
-                                                    <CarouselItem key={imgKey}>
-                                                        <Image src={imgKey} alt="Form preview" width={500} height={700} className="w-full h-auto rounded-md object-contain" />
-                                                    </CarouselItem>
-                                                ))}
-                                            </CarouselContent>
-                                        </Carousel>
-                                        {(activeProcess.applicationForm?.images || []).map((imgKey) => (
-                                            <div key={imgKey} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                                <div className="flex items-center gap-2 text-sm truncate"><FileIcon className="h-4 w-4" /><span className="truncate">{imgKey.split('/').pop()}</span></div>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 pointer-events-auto" onClick={() => handleRemoveCustomFormImage(activeProcess!.id, imgKey)} disabled={isPending}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                 {(activeProcess.applicationForm?.fields && activeProcess.applicationForm.fields.length > 0) && (
-                                    <div className="space-y-4">
-                                        {activeProcess.applicationForm.fields.map(field => (
-                                            <div key={field.id}>
-                                                <Label htmlFor={field.id}>{field.label}{field.required && <span className="text-destructive">*</span>}</Label>
-                                                {field.type === 'text' && <Input id={field.id} />}
-                                                {field.type === 'email' && <Input id={field.id} type="email" />}
-                                                {field.type === 'number' && <Input id={field.id} type="number" />}
-                                                {field.type === 'phone' && <Input id={field.id} type="tel" />}
-                                                {field.type === 'date' && <Input id={field.id} type="date" />}
-                                                {field.type === 'textarea' && <Textarea id={field.id} />}
-                                                {field.type === 'checkbox' && <div className="flex items-center space-x-2 pt-2"><Checkbox id={field.id} /><label htmlFor={field.id} className="text-sm font-normal">I agree</label></div>}
-                                                {field.type === 'select' && (
-                                                    <Select>
-                                                        <SelectTrigger id={field.id}><SelectValue placeholder="Select an option" /></SelectTrigger>
-                                                        <SelectContent>
-                                                            {(field.options || []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                {(activeProcess.applicationForm?.images?.length === 0 && activeProcess.applicationForm?.fields?.length === 0) && (
-                                     <div className="pointer-events-auto">
-                                        <p className="text-sm text-muted-foreground text-center py-4">No images or AI fields for this custom form.</p>
-                                        <Label htmlFor={`upload-${activeProcess.id}`} className="flex-grow"><Button asChild variant="outline" className="w-full cursor-pointer"><span><Upload className="mr-2 h-4 w-4" /> Upload PDF or Image</span></Button></Label>
-                                        <Input id={`upload-${activeProcess.id}`} type="file" className="hidden" accept="image/*,application/pdf" onChange={(e) => e.target.files && handleCustomFormImageUpload(activeProcess!.id, e.target.files[0])} disabled={isPending}/>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                
+                 {activeProcess.applicationForm?.type === 'custom' && (
+                  <div className="p-4 border rounded-md space-y-4 bg-muted/20">
+                      <Label>Custom Form Images</Label>
+                       <Input id={`upload-${activeProcess.id}`} type="file" accept="image/*,application/pdf" onChange={(e) => e.target.files && handleCustomFormImageUpload(activeProcess!.id, e.target.files[0])} disabled={isPending}/>
+                       {(activeProcess.applicationForm.images || []).map((imgKey) => (
+                          <div key={imgKey} className="flex items-center justify-between p-2 rounded-md bg-background">
+                              <div className="flex items-center gap-2 text-sm truncate"><FileIcon className="h-4 w-4" /><span className="truncate">{imgKey.split('/').pop()}</span></div>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 pointer-events-auto" onClick={() => handleRemoveCustomFormImage(activeProcess!.id, imgKey)} disabled={isPending}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                      ))}
+                  </div>
+                 )}
                  <div className="flex justify-end">
                     <Button onClick={handleSave}>
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -526,3 +504,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

@@ -42,7 +42,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
 
     // Form State
     const [formPurpose, setFormPurpose] = useState('');
-    const [includeLogo, setIncludeLogo] = useState('yes');
     const [isMultiCompany, setIsMultiCompany] = useState('no');
     const [selectedPersonalInfo, setSelectedPersonalInfo] = useState<string[]>(['fullName', 'contactInfo']);
     const [includeReferences, setIncludeReferences] = useState('no');
@@ -55,7 +54,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
         setIsLoading(false);
         setGeneratedForm(null);
         setFormPurpose('');
-        setIncludeLogo('yes');
         setIsMultiCompany('no');
         setSelectedPersonalInfo(['fullName', 'contactInfo']);
         setIncludeReferences('no');
@@ -82,7 +80,7 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
             const result = await generateFormFromOptions({
                 formPurpose,
                 companyName: isMultiCompany === 'no' ? companyName : undefined,
-                includeLogo: includeLogo === 'yes',
+                includeLogo: false, // This is a design choice, not a form field.
                 personalInfo: selectedPersonalInfo.map(id => personalInfoOptions.find(opt => opt.id === id)!.label),
                 includeReferences: includeReferences === 'yes',
                 includeEducation: includeEducation === 'yes',
@@ -174,13 +172,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                         <div className="space-y-2">
                             <Label htmlFor="formPurpose">What is the main purpose of this form? (e.g., "Driver Application", "Office Staff Onboarding")</Label>
                             <Input id="formPurpose" value={formPurpose} onChange={(e) => setFormPurpose(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Do you want to include a space for the company logo?</Label>
-                            <RadioGroup value={includeLogo} onValueChange={setIncludeLogo} className="flex gap-4">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="logo-yes" /><Label htmlFor="logo-yes" className="ml-2 font-normal">Yes</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="logo-no" /><Label htmlFor="logo-no" className="ml-2 font-normal">No</Label></FormItem>
-                            </RadioGroup>
                         </div>
                         <div className="space-y-2">
                             <Label>Is this form for one specific company or multiple companies?</Label>

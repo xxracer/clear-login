@@ -15,7 +15,7 @@ import {z} from 'genkit';
 const GenerateFormOptionsInputSchema = z.object({
   formPurpose: z.string().describe("A brief description of the form's purpose (e.g., 'Delivery Driver Application')."),
   companyName: z.string().optional().describe("The name of the company for which the form is being created."),
-  includeLogo: z.boolean().describe("Whether to include a space for a company logo."),
+  includeLogo: z.boolean().describe("This is a design choice and should not be a field. The AI should not create a form field for a logo."),
   personalInfo: z.array(z.string()).describe("A list of essential personal information fields to include."),
   includeReferences: z.boolean().describe("Whether to include a section for personal or professional references."),
   includeEducation: z.boolean().describe("Whether to include a section for educational history."),
@@ -53,7 +53,6 @@ const prompt = ai.definePrompt({
   User's requirements for the form:
   - Purpose of the form: "{{{formPurpose}}}"
   {{#if companyName}}- For company: "{{{companyName}}}"{{/if}}
-  {{#if includeLogo}}- The form should have a designated area for a company logo.{{/if}}
 
   Sections to include:
   - Personal Information: The user has specified the following fields are essential: {{#each personalInfo}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}. Please include these and any other logical personal info fields.
@@ -61,6 +60,8 @@ const prompt = ai.definePrompt({
   {{#if includeEmploymentHistory}}- Employment History: A section to list previous jobs, including dates, responsibilities, and reason for leaving.{{/if}}
   {{#if includeReferences}}- References: A section for personal or professional references.{{/if}}
   {{#if includeCredentials}}- Credentials and Skills: A section for licenses, certifications, or other specialized skills.{{/if}}
+  
+  Do NOT create a field for a company logo. This is handled by the application's design, not as a form input.
 
   Based on these requirements, generate a structured form. The 'formName' should be descriptive and based on the purpose. For each field, provide a unique ID, a label, an appropriate input type, and whether it is required.
   For fields that should have a predefined set of choices, use the 'select' type and provide the options.`,
