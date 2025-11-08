@@ -443,7 +443,11 @@ export default function SettingsPage() {
                       ))}
                   </div>
                  )}
-                 <div className="flex justify-end">
+                 <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsAiBuilderOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Process
+                    </Button>
                     <Button onClick={handleSave}>
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save Form
@@ -470,7 +474,7 @@ export default function SettingsPage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>About the AI Form Builder</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Describe a form in natural language, and the AI will generate a structured list of fields for you. You can then save this as a new onboarding process in your library.
+                                Describe a form in natural language, and the AI will generate a structured list of fields for you. You can then save this as a new onboarding process in your Form Library.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -504,4 +508,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
