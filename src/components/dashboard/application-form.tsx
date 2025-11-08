@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -139,17 +140,17 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <FormField control={form.control} name="lastName" render={({ field }) => (
-                  <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Last Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="firstName" render={({ field }) => (
-                  <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="Jane" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>First Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="Jane" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="middleName" render={({ field }) => (
                   <FormItem><FormLabel>Middle Name</FormLabel><FormControl><Input placeholder="(Optional)" {...field} /></FormControl><FormMessage /></FormItem>
               )}/>
             </div>
              <FormField control={form.control} name="date" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
+                <FormItem className="flex flex-col"><FormLabel>Date <span className="text-destructive">*</span></FormLabel>
                 <Popover><PopoverTrigger asChild>
                     <FormControl>
                         <Button variant={"outline"} className={cn("w-full md:w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -173,29 +174,29 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
             </CardHeader>
             <CardContent className="space-y-6">
                 <FormField control={form.control} name="streetAddress" render={({ field }) => (
-                    <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Main St" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Street Address <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="123 Main St" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <FormField control={form.control} name="city" render={({ field }) => (
-                        <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Anytown" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="Anytown" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="state" render={({ field }) => (
-                        <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="CA" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="CA" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="zipCode" render={({ field }) => (
-                        <FormItem><FormLabel>Zip Code</FormLabel><FormControl><Input placeholder="90210" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Zip Code <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="90210" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </div>
                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormField control={form.control} name="homePhone" render={({ field }) => (
-                        <FormItem><FormLabel>Home Phone</FormLabel><FormControl><Input placeholder="(555) 123-4567" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Home Phone <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="(555) 123-4567" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="businessPhone" render={({ field }) => (
                         <FormItem><FormLabel>Business Phone</FormLabel><FormControl><Input placeholder="(Optional)" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </div>
                 <FormField control={form.control} name="emergencyContact" render={({ field }) => (
-                    <FormItem><FormLabel>Emergency contact (person not living with you)</FormLabel><FormControl><Input placeholder="John Smith" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Emergency contact (person not living with you) <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="John Smith" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             </CardContent>
         </Card>
@@ -206,7 +207,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
             </CardHeader>
             <CardContent className="space-y-8">
                 <FormField control={form.control} name="previouslyEmployed" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Have you ever applied for employment with this Agency?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Have you ever applied for employment with this Agency? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -216,10 +217,10 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                  <FormField control={form.control} name="hoursAvailable" render={({ field }) => (
-                    <FormItem><FormLabel>How many hours a week are you available for work?</FormLabel><FormControl><Input type="number" placeholder="40" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>How many hours a week are you available for work? <span className="text-destructive">*</span></FormLabel><FormControl><Input type="number" placeholder="40" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="legallyEligible" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Are you legally eligible for employment in the United States?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Are you legally eligible for employment in the United States? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -229,7 +230,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 <FormField control={form.control} name="howLearned" render={({ field }) => (
-                    <FormItem><FormLabel>How did you learn of our organization?</FormLabel>
+                    <FormItem><FormLabel>How did you learn of our organization? <span className="text-destructive">*</span></FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -250,7 +251,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 <FormField control={form.control} name="position" render={({ field }) => (
-                    <FormItem><FormLabel>Position applying for</FormLabel><FormControl><Input placeholder="Software Engineer" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Position applying for <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="Software Engineer" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
             </CardContent>
         </Card>
@@ -321,31 +322,31 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     <h4 className="font-semibold">Employer #{index + 1}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name={`employmentHistory.${index}.companyName`} render={({ field }) => (
-                        <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Company Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name={`employmentHistory.${index}.telephone`} render={({ field }) => (
-                        <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Telephone <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     </div>
                     <FormField control={form.control} name={`employmentHistory.${index}.address`} render={({ field }) => (
-                        <FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Address <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField control={form.control} name={`employmentHistory.${index}.city`} render={({ field }) => (
-                        <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>City <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name={`employmentHistory.${index}.state`} render={({ field }) => (
-                        <FormItem><FormLabel>State</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>State <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name={`employmentHistory.${index}.zipCode`} render={({ field }) => (
-                        <FormItem><FormLabel>Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Zip Code <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField control={form.control} name={`employmentHistory.${index}.dateFrom`} render={({ field }) => (
                         <FormItem className="flex flex-col">
-                            <FormLabel>Dates of Employment: From</FormLabel>
+                            <FormLabel>Dates of Employment: From <span className="text-destructive">*</span></FormLabel>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <FormControl>
@@ -362,7 +363,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     )}/>
                     <FormField control={form.control} name={`employmentHistory.${index}.dateTo`} render={({ field }) => (
                         <FormItem className="flex flex-col">
-                            <FormLabel>To</FormLabel>
+                            <FormLabel>To <span className="text-destructive">*</span></FormLabel>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <FormControl>
@@ -379,7 +380,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     )}/>
                     <FormField control={form.control} name={`employmentHistory.${index}.startingPay`} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Starting Pay</FormLabel>
+                            <FormLabel>Starting Pay <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -388,14 +389,14 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
 
                     <FormField control={form.control} name={`employmentHistory.${index}.jobTitleAndDescription`} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Job Title and Describe your work</FormLabel>
+                            <FormLabel>Job Title and Describe your work <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Textarea {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )} />
                     <FormField control={form.control} name={`employmentHistory.${index}.reasonForLeaving`} render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Reason for leaving</FormLabel>
+                            <FormLabel>Reason for leaving <span className="text-destructive">*</span></FormLabel>
                             <FormControl><Textarea {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
@@ -417,7 +418,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
             </CardHeader>
             <CardContent className="space-y-8">
                 <FormField control={form.control} name="differentLastName" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Was your last name different from your present name during the above listed jobs?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Was your last name different from your present name during the above listed jobs? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -427,10 +428,10 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 {form.watch('differentLastName') === 'yes' && (
-                    <FormField control={form.control} name="previousName" render={({ field }) => (<FormItem><FormLabel>If yes, what was your name?</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="previousName" render={({ field }) => (<FormItem><FormLabel>If yes, what was your name? <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 )}
                 <FormField control={form.control} name="currentlyEmployed" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Are you currently employed?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Are you currently employed? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -440,7 +441,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 <FormField control={form.control} name="reliableTransportation" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Do you have reliable transportation?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Do you have reliable transportation? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -466,14 +467,14 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                         <h4 className="font-semibold">Reference #{index + 1}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormField control={form.control} name={`professionalReferences.${index}.name`} render={({ field }) => (
-                                <FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Name <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name={`professionalReferences.${index}.telephone`} render={({ field }) => (
-                                <FormItem><FormLabel>Telephone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Telephone <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
                         <FormField control={form.control} name={`professionalReferences.${index}.address`} render={({ field }) => (
-                            <FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Address <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
                 ))}
@@ -492,7 +493,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
             </CardHeader>
             <CardContent className="space-y-8">
                  <FormField control={form.control} name="convictedOfCrime" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Have you ever been convicted of a crime in the past 5 years, barring employment in a Home Care and community support Agency?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Have you ever been convicted of a crime in the past 5 years, barring employment in a Home Care and community support Agency? <span className="text-destructive">*</span></FormLabel>
                         <FormDescription>Conviction will not necessarily disqualify an applicant from employment.</FormDescription>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
@@ -503,11 +504,11 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 {form.watch('convictedOfCrime') === 'yes' && (
-                    <FormField control={form.control} name="crimeDescription" render={({ field }) => (<FormItem><FormLabel>If yes, describe in full:</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="crimeDescription" render={({ field }) => (<FormItem><FormLabel>If yes, describe in full: <span className="text-destructive">*</span></FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
                 )}
 
                 <FormField control={form.control} name="capableOfPerformingJob" render={({ field }) => (
-                    <FormItem className="space-y-3"><FormLabel>Are you capable of performing the job set forth in the job description?</FormLabel>
+                    <FormItem className="space-y-3"><FormLabel>Are you capable of performing the job set forth in the job description? <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row space-x-4">
                                 <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal">Yes</FormLabel></FormItem>
@@ -517,7 +518,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     </FormItem>
                 )}/>
                 {form.watch('capableOfPerformingJob') === 'no' && (
-                    <FormField control={form.control} name="jobRequirementLimitation" render={({ field }) => (<FormItem><FormLabel>If you answered No, which job requirement can you not meet?</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="jobRequirementLimitation" render={({ field }) => (<FormItem><FormLabel>If you answered No, which job requirement can you not meet? <span className="text-destructive">*</span></FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 )}
             </CardContent>
         </Card>
@@ -557,7 +558,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                         const fileName = value instanceof File ? value.name : "No file chosen";
                         return (
                             <FormItem>
-                                <FormLabel>Upload your resume</FormLabel>
+                                <FormLabel>Upload your resume <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <Input 
                                         type="file" 
@@ -591,7 +592,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                         const fileName = value instanceof File ? value.name : "No file chosen";
                         return (
                             <FormItem>
-                                <FormLabel>Upload your Driver's License</FormLabel>
+                                <FormLabel>Upload your Driver's License <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <Input 
                                         type="file" 
@@ -615,7 +616,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     name="driversLicenseName"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Name on Driver's License</FormLabel>
+                            <FormLabel>Name on Driver's License <span className="text-destructive">*</span></FormLabel>
                             <FormControl>
                                 <Input placeholder="Jane Doe" {...field} />
                             </FormControl>
@@ -627,7 +628,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     control={form.control} 
                     name="driversLicenseExpiration" 
                     render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>License Expiration Date</FormLabel>
+                        <FormItem className="flex flex-col"><FormLabel>License Expiration Date <span className="text-destructive">*</span></FormLabel>
                         <Popover><PopoverTrigger asChild>
                             <FormControl>
                                 <Button variant={"outline"} className={cn("w-full md:w-[240px] pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -666,7 +667,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                            <FormLabel>By checking this box, I acknowledge that I have read and agree to the terms above.</FormLabel>
+                            <FormLabel>By checking this box, I acknowledge that I have read and agree to the terms above. <span className="text-destructive">*</span></FormLabel>
                         </div>
                         </FormItem>
                     )}
@@ -677,7 +678,7 @@ export function ApplicationForm({ companyName }: { companyName: string }) {
                     name="signature"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Electronic Signature</FormLabel>
+                            <FormLabel>Electronic Signature <span className="text-destructive">*</span></FormLabel>
                             <FormControl>
                                 <Input placeholder="Type your full name" {...field} />
                             </FormControl>
