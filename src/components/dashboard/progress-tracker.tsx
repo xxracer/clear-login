@@ -1,23 +1,23 @@
 
 "use client";
 
-import { CheckCircle, FileText, FileUp, ClipboardList } from "lucide-react";
+import { CheckCircle, FileText, FileUp, ClipboardList, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-type Phase = "application" | "interview" | "documentation";
+type Status = 'candidate' | 'interview' | 'new-hire' | 'employee' | 'inactive';
 
 type ProgressTrackerProps = {
     candidateId: string;
-    currentPhase: Phase;
+    status: Status;
 };
 
 
-export function ProgressTracker({ candidateId, currentPhase }: ProgressTrackerProps) {
+export function ProgressTracker({ candidateId, status }: ProgressTrackerProps) {
 
   const phases = [
     {
-      id: "application",
+      id: "candidate",
       name: "Phase 1: Application Received",
       description: "Initial candidate data has been submitted.",
       icon: FileText,
@@ -34,9 +34,24 @@ export function ProgressTracker({ candidateId, currentPhase }: ProgressTrackerPr
       description: "Upload and verify all required documents.",
       icon: FileUp,
     },
+     {
+      id: "new-hire",
+      name: "Phase 4: Hired",
+      description: "The candidate has been marked as a new hire.",
+      icon: UserCheck,
+    },
   ];
 
-  const currentPhaseIndex = phases.findIndex(p => p.id === currentPhase);
+  const statusToPhaseId: Record<Status, string> = {
+    'candidate': 'candidate',
+    'interview': 'interview',
+    'new-hire': 'new-hire',
+    'employee': 'new-hire',
+    'inactive': 'new-hire',
+  }
+
+  const currentPhaseId = statusToPhaseId[status];
+  const currentPhaseIndex = phases.findIndex(p => p.id === currentPhaseId);
 
   return (
     <Card>

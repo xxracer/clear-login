@@ -51,13 +51,13 @@ const daysOfWeek = [
 
 type InterviewReviewFormProps = {
     candidateName: string;
-    onMoveToDocumentation: () => void;
+    onReviewSubmit: () => void;
+    isAlreadySubmitted: boolean;
 };
 
 
-export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: InterviewReviewFormProps) {
+export function InterviewReviewForm({ candidateName, onReviewSubmit, isAlreadySubmitted }: InterviewReviewFormProps) {
   const { toast } = useToast();
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<InterviewReviewSchema>({
     resolver: zodResolver(interviewReviewSchema),
@@ -77,13 +77,8 @@ export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: In
 
   function onSubmit(data: InterviewReviewSchema) {
     // In a real app, you'd save this data.
-    // For this demo, we just show a toast and change the state.
     console.log("Interview Review Data:", data);
-    toast({
-      title: "Interview Review Submitted",
-      description: "The review has been saved. You can now move the candidate to the next phase.",
-    });
-    setIsSubmitted(true);
+    onReviewSubmit();
   }
 
   const renderRadioGroup = (name: keyof InterviewReviewSchema, options: string[]) => (
@@ -97,7 +92,7 @@ export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: In
               onValueChange={field.onChange}
               defaultValue={field.value as string}
               className="flex flex-col space-y-1 sm:flex-row sm:space-y-0 sm:space-x-8"
-              disabled={isSubmitted}
+              disabled={isAlreadySubmitted}
             >
               {options.map((option) => (
                 <FormItem
@@ -129,7 +124,7 @@ export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: In
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-             <fieldset disabled={isSubmitted} className="space-y-8 group">
+             <fieldset disabled={isAlreadySubmitted} className="space-y-8 group">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                 <FormField
                     control={form.control}
@@ -333,13 +328,8 @@ export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: In
             </fieldset>
             
             <div className="flex justify-end">
-              {!isSubmitted ? (
+              {!isAlreadySubmitted && (
                 <Button type="submit">Submit Review</Button>
-              ) : (
-                <Button type="button" onClick={onMoveToDocumentation}>
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Move to Phase 3 Documentation
-                </Button>
               )}
             </div>
           </form>

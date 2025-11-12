@@ -25,19 +25,17 @@ function ApplicationViewContent() {
 
     const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [view, setView] = useState<'application' | 'interview' | 'documentation'>('application');
+    const [interviewSubmitted, setInterviewSubmitted] = useState(false);
 
     const loadData = useCallback(async () => {
         if (candidateId) {
             setLoading(true);
             const data = await getCandidate(candidateId);
             setApplicationData(data);
-            if (data?.status === 'new-hire' || data?.status === 'employee' || data?.status === 'inactive') {
-                setView('documentation');
-            } else if (data?.status === 'interview') {
-                setView('interview');
-            } else {
-                setView('application');
+            // If we are loading a candidate that is past the interview phase,
+            // we can assume the interview form part is "done"
+            if (data && (data.status === 'new-hire' || data.status === 'employee' || data.status === 'inactive')) {
+                setInterviewSubmitted(true);
             }
             setLoading(false);
         } else {
@@ -86,11 +84,13 @@ function ApplicationViewContent() {
             );
         }
     }
-
-    const handleMoveToDocumentation = () => {
+    
+    const handleInterviewSubmit = () => {
+        // This is called when the interview form is submitted successfully
         toast({ title: "Interview Reviewed", description: "You can now proceed to the documentation phase." });
-        setView('documentation');
+        setInterviewSubmitted(true); // This will now reveal the Documentation tab trigger.
     }
+
 
     const handleMarkAsNewHire = (id: string) => {
         handleAction(
@@ -134,16 +134,16 @@ function ApplicationViewContent() {
         )
     }
 
-    const isCandidate = applicationData.status === 'candidate';
-    const isInterview = applicationData.status === 'interview';
-    const showDocumentation = view === 'documentation' || applicationData.status === 'new-hire' || applicationData.status === 'employee' || applicationData.status === 'inactive';
+    const isCandidatePhase = applicationData.status === 'candidate';
+    const isInterviewPhase = applicationData.status === 'interview';
+    const isDocumentationPhase = applicationData.status === 'new-hire' || applicationData.status === 'employee' || applicationData.status === 'inactive';
     
     // Determine the default tab based on the current state
-    let defaultTab = "application";
-    if (showDocumentation) {
-        defaultTab = "documentation";
-    } else if (isInterview) {
-        defaultTab = "interview";
+    let defaultTabValue = 'application';
+    if (isDocumentationPhase) {
+        defaultTabValue = 'documentation';
+    } else if (isInterviewPhase) {
+        defaultTabValue = 'interview';
     }
 
     return (
@@ -162,7 +162,7 @@ function ApplicationViewContent() {
                         <Printer className="mr-2 h-4 w-4" />
                         Print
                     </Button>
-                    {isCandidate && (
+                    {isCandidatePhase && (
                         <>
                             <Button variant="destructive" onClick={() => handleRejectCandidate(applicationData.id)}>
                                 <UserX className="mr-2 h-4 w-4" />
@@ -177,35 +177,36 @@ function ApplicationViewContent() {
                 </div>
             </div>
 
-            <ProgressTracker candidateId={candidateId} currentPhase={view} />
+            <ProgressTracker candidateId={candidateId} status={applicationData.status || 'candidate'} />
 
-            <Tabs defaultValue={defaultTab} className="w-full">
+            <Tabs defaultValue={defaultTabValue} className="w-full">
                 <TabsList>
                     <TabsTrigger value="application"><FileText className="mr-2 h-4 w-4"/> Original Application</TabsTrigger>
-                    {isInterview || showDocumentation ? (
+                    { (isInterviewPhase || isDocumentationPhase) && (
                         <TabsTrigger value="interview"><MessageSquare className="mr-2 h-4 w-4"/> Interview Review</TabsTrigger>
-                    ) : null}
-                    {showDocumentation ? (
+                    )}
+                    { (isDocumentationPhase || (isInterviewPhase && interviewSubmitted)) && (
                         <TabsTrigger value="documentation"><FileUp className="mr-2 h-4 w-4" /> Documentation</TabsTrigger>
-                    ) : null}
+                    )}
                 </TabsList>
                 <TabsContent value="application">
                     <ApplicationView data={applicationData} />
                 </TabsContent>
-                {(isInterview || showDocumentation) && (
+                { (isInterviewPhase || isDocumentationPhase) && (
                     <TabsContent value="interview">
                         <InterviewReviewForm 
                             candidateName={`${applicationData.firstName} ${applicationData.lastName}`} 
-                            onMoveToDocumentation={handleMoveToDocumentation}
+                            onReviewSubmit={handleInterviewSubmit}
+                            isAlreadySubmitted={interviewSubmitted}
                         />
                     </TabsContent>
                 )}
-                {showDocumentation && (
+                { (isDocumentationPhase || (isInterviewPhase && interviewSubmitted)) && (
                     <TabsContent value="documentation">
                         <div className="space-y-4">
                             <DocumentationPhase candidateId={candidateId} />
-                             <div className="flex justify-end pt-4">
-                                <Button onClick={() => handleMarkAsNewHire(applicationData.id)}>
+                            <div className="flex justify-end pt-4">
+                                <Button onClick={() => handleMarkAsNewHire(applicationData.id)} disabled={applicationData.status !== 'interview'}>
                                     <UserCheck className="mr-2 h-4 w-4" />
                                     Mark as New Hire
                                 </Button>
