@@ -96,12 +96,6 @@ function ApplicationViewContent() {
         );
     }
 
-    const handleReviewSubmit = () => {
-        if (applicationData) {
-            handleMarkAsNewHire(applicationData.id);
-        }
-    }
-
     if (loading) {
         return (
             <div className="flex flex-1 items-center justify-center">
@@ -161,12 +155,6 @@ function ApplicationViewContent() {
                             </Button>
                         </>
                     )}
-                    {isInterview && (
-                         <Button onClick={() => handleMarkAsNewHire(applicationData.id)}>
-                            <UserCheck className="mr-2 h-4 w-4" />
-                            Approve for Hire
-                        </Button>
-                    )}
                     {isNewHire && (
                         <Button onClick={() => handleMarkAsEmployee(applicationData.id)}>
                             <Briefcase className="mr-2 h-4 w-4" />
@@ -190,7 +178,7 @@ function ApplicationViewContent() {
                     <TabsContent value="interview">
                         <InterviewReviewForm 
                             candidateName={`${applicationData.firstName} ${applicationData.lastName}`} 
-                            onReviewSubmit={handleReviewSubmit}
+                            onMoveToDocumentation={() => handleMarkAsNewHire(applicationData.id)}
                         />
                     </TabsContent>
                 </Tabs>

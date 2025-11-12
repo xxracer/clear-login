@@ -5,7 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, UserCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +38,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "../ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "../ui/textarea";
-import { useEffect } from "react";
 
 const daysOfWeek = [
   { id: "M", label: "M" },
@@ -50,12 +51,13 @@ const daysOfWeek = [
 
 type InterviewReviewFormProps = {
     candidateName: string;
-    onReviewSubmit: () => void;
+    onMoveToDocumentation: () => void;
 };
 
 
-export function InterviewReviewForm({ candidateName, onReviewSubmit }: InterviewReviewFormProps) {
+export function InterviewReviewForm({ candidateName, onMoveToDocumentation }: InterviewReviewFormProps) {
   const { toast } = useToast();
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<InterviewReviewSchema>({
     resolver: zodResolver(interviewReviewSchema),
@@ -76,9 +78,9 @@ export function InterviewReviewForm({ candidateName, onReviewSubmit }: Interview
   function onSubmit(data: InterviewReviewSchema) {
     toast({
       title: "Interview Review Submitted",
-      description: "The review has been saved successfully.",
+      description: "The review has been saved. You can now move the candidate to the next phase.",
     });
-    onReviewSubmit();
+    setIsSubmitted(true);
   }
 
   const renderRadioGroup = (name: keyof InterviewReviewSchema, options: string[]) => (
@@ -92,6 +94,7 @@ export function InterviewReviewForm({ candidateName, onReviewSubmit }: Interview
               onValueChange={field.onChange}
               defaultValue={field.value as string}
               className="flex flex-col space-y-1 sm:flex-row sm:space-y-0 sm:space-x-8"
+              disabled={isSubmitted}
             >
               {options.map((option) => (
                 <FormItem
@@ -123,209 +126,218 @@ export function InterviewReviewForm({ candidateName, onReviewSubmit }: Interview
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-              <FormField
-                control={form.control}
-                name="applicantName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Applicant Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+             <fieldset disabled={isSubmitted} className="space-y-8 group">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <FormField
+                    control={form.control}
+                    name="applicantName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Applicant Name</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                        <Input {...field} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="daysAvailable"
-              render={() => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Days and Hours available</FormLabel>
-                  </div>
-                  <div className="flex flex-wrap gap-4">
-                  {daysOfWeek.map((item) => (
-                    <FormField
-                      key={item.id}
-                      control={form.control}
-                      name="daysAvailable"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={item.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
                             <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...(field.value || []), item.id])
-                                    : field.onChange(
-                                        field.value?.filter(
-                                          (value) => value !== item.id
-                                        )
-                                      )
-                                }}
-                              />
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                                )}
+                            >
+                                {field.value ? (
+                                format(field.value, "PPP")
+                                ) : (
+                                <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
                             </FormControl>
-                            <FormLabel className="font-normal">
-                              {item.label}
-                            </FormLabel>
-                          </FormItem>
-                        )
-                      }}
-                    />
-                  ))}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Personality</FormLabel>
-                    {renderRadioGroup("personality", ["friendly", "average", "quiet"])}
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            />
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Verbal skills</FormLabel>
-                    {renderRadioGroup("verbalSkills", ["excellent", "average", "poor"])}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Communicates</FormLabel>
-                    {renderRadioGroup("communicates", ["clear", "somewhat clear", "not very clear"])}
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Flexibility</FormLabel>
-                    {renderRadioGroup("flexibility", ["very flexible", "somewhat", "not flexible"])}
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Skill level</FormLabel>
-                    {renderRadioGroup("skillLevel", ["higher skilled", "moderately skilled", "lower skilled"])}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
-                    <FormLabel>Appearance</FormLabel>
-                    {renderRadioGroup("appearance", ["professional", "semi-professional", "not professional"])}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] items-center gap-4">
-                    <FormLabel>Good Candidate for employment</FormLabel>
-                    {renderRadioGroup("goodCandidate", ["yes", "no"])}
-                </div>
-            </div>
-
-            <FormField
-              control={form.control}
-              name="overallInterview"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Overall Interview</FormLabel>
-                  <FormControl>
-                    <Textarea rows={5} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-              <FormField
+                
+                <FormField
                 control={form.control}
-                name="interviewer"
+                name="daysAvailable"
+                render={() => (
+                    <FormItem>
+                    <div className="mb-4">
+                        <FormLabel className="text-base">Days and Hours available</FormLabel>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                    {daysOfWeek.map((item) => (
+                        <FormField
+                        key={item.id}
+                        control={form.control}
+                        name="daysAvailable"
+                        render={({ field }) => {
+                            return (
+                            <FormItem
+                                key={item.id}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                            >
+                                <FormControl>
+                                <Checkbox
+                                    checked={field.value?.includes(item.id)}
+                                    onCheckedChange={(checked) => {
+                                    return checked
+                                        ? field.onChange([...(field.value || []), item.id])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                            (value) => value !== item.id
+                                            )
+                                        )
+                                    }}
+                                />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                {item.label}
+                                </FormLabel>
+                            </FormItem>
+                            )
+                        }}
+                        />
+                    ))}
+                    </div>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Personality</FormLabel>
+                        {renderRadioGroup("personality", ["friendly", "average", "quiet"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Verbal skills</FormLabel>
+                        {renderRadioGroup("verbalSkills", ["excellent", "average", "poor"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Communicates</FormLabel>
+                        {renderRadioGroup("communicates", ["clear", "somewhat clear", "not very clear"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Flexibility</FormLabel>
+                        {renderRadioGroup("flexibility", ["very flexible", "somewhat", "not flexible"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Skill level</FormLabel>
+                        {renderRadioGroup("skillLevel", ["higher skilled", "moderately skilled", "lower skilled"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-4">
+                        <FormLabel>Appearance</FormLabel>
+                        {renderRadioGroup("appearance", ["professional", "semi-professional", "not professional"])}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] items-center gap-4">
+                        <FormLabel>Good Candidate for employment</FormLabel>
+                        {renderRadioGroup("goodCandidate", ["yes", "no"])}
+                    </div>
+                </div>
+
+                <FormField
+                control={form.control}
+                name="overallInterview"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Interviewer</FormLabel>
+                    <FormItem>
+                    <FormLabel>Overall Interview</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                        <Textarea rows={5} {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
-              />
-              <FormField
-                control={form.control}
-                name="interviewerDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <FormField
+                    control={form.control}
+                    name="interviewer"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Interviewer</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                        <Input {...field} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="interviewerDate"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                                )}
+                            >
+                                {field.value ? (
+                                format(field.value, "PPP")
+                                ) : (
+                                <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            />
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+            </fieldset>
             
             <div className="flex justify-end">
-              <Button type="submit">Submit Review</Button>
+              {!isSubmitted ? (
+                <Button type="submit">Submit Review</Button>
+              ) : (
+                <Button type="button" onClick={onMoveToDocumentation}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Move to Phase 3 Documentation
+                </Button>
+              )}
             </div>
           </form>
         </Form>
