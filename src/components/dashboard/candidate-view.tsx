@@ -1,74 +1,36 @@
 
 'use client';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DocumentationPhase } from "@/components/dashboard/documentation-phase";
-import { ProgressTracker } from "@/components/dashboard/progress-tracker";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { ClipboardCheck, Users } from "lucide-react";
 import { getInterviewCandidates } from "@/app/actions/client-actions";
 import { useEffect, useState, useCallback } from "react";
 import type { ApplicationData } from "@/lib/schemas";
-import { InterviewReviewForm } from "./interview-review-form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { format } from 'date-fns';
+import { Users, Eye } from "lucide-react";
+import { CardDescription, CardHeader, CardTitle } from "../ui/card";
 
-function CandidateDetails({ interviewCandidate }: { interviewCandidate: ApplicationData }) {
-    if (!interviewCandidate) return null;
-
-    const [currentPhase, setCurrentPhase] = useState<"interview" | "documentation">("interview");
-    const [activeTab, setActiveTab] = useState<string>("interview");
-
-    const handleInterviewSubmit = () => {
-        const nextPhase = "documentation";
-        setCurrentPhase(nextPhase);
-        setActiveTab(nextPhase);
-    };
-
-    const handleTabChange = (value: string) => {
-        setActiveTab(value);
-    }
-
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h2 className="text-xl font-headline font-semibold text-foreground">
-                  New Candidate for {interviewCandidate.applyingFor.join(', ')}: {interviewCandidate.firstName} {interviewCandidate.lastName}
-                </h2>
-            </div>
-
-            <ProgressTracker 
-                candidateId={interviewCandidate.id} 
-                currentPhase={currentPhase}
-            />
-
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-                    <TabsTrigger value="interview">Phase 2: Interview</TabsTrigger>
-                    <TabsTrigger value="documentation">Phase 3: Documentation</TabsTrigger>
-                </TabsList>
-                <TabsContent value="interview" className="mt-6">
-                    <InterviewReviewForm 
-                        candidateName={`${interviewCandidate.firstName} ${interviewCandidate.lastName}`}
-                        onReviewSubmit={handleInterviewSubmit}
-                    />
-                </TabsContent>
-                <TabsContent value="documentation" className="mt-6">
-                    <DocumentationPhase candidateId={interviewCandidate.id} />
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
+// Helper to convert string to JS Date
+function toDate(dateString: string | Date | undefined): Date | null {
+  if (!dateString) return null;
+  if (dateString instanceof Date) return dateString;
+  try {
+    return new Date(dateString);
+  } catch (e) {
+    return null;
+  }
 }
 
-
 export function CandidateView() {
-    const [interviewCandidate, setInterviewCandidate] = useState<ApplicationData | null>(null);
+    const [interviewCandidates, setInterviewCandidates] = useState<ApplicationData[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const loadData = useCallback(async () => {
         setLoading(true);
         const candidates = await getInterviewCandidates();
-        // Display the most recent candidate set to interview
-        setInterviewCandidate(candidates[0] || null);
+        setInterviewCandidates(candidates);
         setLoading(false);
     }, []);
 
@@ -80,6 +42,11 @@ export function CandidateView() {
             window.removeEventListener('storage', loadData);
         };
     }, [loadData]);
+    
+    const handleViewCandidate = (candidateId: string) => {
+        router.push(`/dashboard/candidates/view?id=${candidateId}`);
+    }
+
 
     if (loading) {
         return (
@@ -89,24 +56,50 @@ export function CandidateView() {
         )
     }
 
-    if (!interviewCandidate) {
+    if (interviewCandidates.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg min-h-[200px]">
                 <CardHeader className="p-0">
                     <div className="flex justify-center mb-4">
                         <Users className="h-12 w-12 text-muted-foreground" />
                     </div>
-                    <CardTitle className="font-headline text-xl">No Active Candidate for Interview</CardTitle>
+                    <CardTitle className="font-headline text-xl">No Active Candidates for Interview</CardTitle>
                     <CardDescription>
-                        Once a candidate is set for an interview, their progress will appear here.
+                        Once a candidate is set for an interview, they will appear here.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="p-0 mt-4">
-                    <p className="text-sm text-muted-foreground">Go to the 'Candidates' section to select one for an interview.</p>
-                </CardContent>
             </div>
         )
     }
 
-    return <CandidateDetails interviewCandidate={interviewCandidate} />;
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Applying For</TableHead>
+                    <TableHead>Date Applied</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {interviewCandidates.map((candidate) => {
+                    const applicationDate = toDate(candidate.date);
+                    return (
+                      <TableRow key={candidate.id}>
+                          <TableCell className="font-medium">{candidate.firstName} {candidate.lastName}</TableCell>
+                          <TableCell>{candidate.applyingFor.join(', ')}</TableCell>
+                          <TableCell>{applicationDate ? format(applicationDate, 'PPP') : 'N/A'}</TableCell>
+                          <TableCell className="text-right">
+                              <Button variant="outline" size="sm" onClick={() => handleViewCandidate(candidate.id)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View/Manage
+                              </Button>
+                          </TableCell>
+                      </TableRow>
+                    )
+                })}
+            </TableBody>
+        </Table>
+    );
 }
