@@ -23,6 +23,11 @@ export default function SuperUserDashboardPage() {
             await resetDemoData();
             // This clears Vercel KV for companies
             await deleteAllCompanies();
+            
+            // Clear the seen count and trigger a notification check
+            localStorage.setItem('lastSeenCandidateCount', '0');
+            window.dispatchEvent(new Event('data-reset'));
+
             toast({ title: "Demo Reset Successful", description: "All company and candidate data has been cleared." });
         } catch (error) {
             toast({ variant: "destructive", title: "Demo Reset Failed", description: (error as Error).message });

@@ -29,7 +29,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useCallback, useTransition } from "react";
 import { checkForExpiringDocuments } from "@/app/actions/client-actions";
-import { getNewCandidates } from "@/app/actions/candidate-actions";
 import { cn } from "@/lib/utils";
 
 export function DashboardSidebar() {
@@ -38,32 +37,40 @@ export function DashboardSidebar() {
   const [showNewCandidateAlert, setShowNewCandidateAlert] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const checkAlerts = useCallback(async () => {
+  const checkDocAlert = useCallback(async () => {
     const hasExpiring = await checkForExpiringDocuments();
     setShowDocAlert(hasExpiring);
-    const newCandidates = await getNewCandidates();
-    setShowNewCandidateAlert(newCandidates.length > 0);
+  }, []);
+
+  const handleNewCandidateEvent = useCallback((event: Event) => {
+    const customEvent = event as CustomEvent<{ hasNew: boolean }>;
+    setShowNewCandidateAlert(customEvent.detail.hasNew);
   }, []);
 
   useEffect(() => {
     startTransition(() => {
-      checkAlerts();
+      checkDocAlert();
     });
     
-    // Listen for storage changes to re-check alerts
-    window.addEventListener('storage', checkAlerts);
+    // Listen for events that should trigger a re-check
+    window.addEventListener('storage', checkDocAlert);
+    window.addEventListener('data-reset', checkDocAlert);
+    window.addEventListener('new-candidates', handleNewCandidateEvent);
+
 
     const interval = setInterval(() => {
         startTransition(() => {
-            checkAlerts();
+            checkDocAlert();
         });
     }, 30 * 1000); // Poll every 30 seconds
 
     return () => {
-      window.removeEventListener('storage', checkAlerts);
+      window.removeEventListener('storage', checkDocAlert);
+      window.removeEventListener('data-reset', checkDocAlert);
+      window.removeEventListener('new-candidates', handleNewCandidateEvent);
       clearInterval(interval);
     };
-  }, [pathname, checkAlerts]);
+  }, [pathname, checkDocAlert, handleNewCandidateEvent]);
 
   return (
     <Sidebar>

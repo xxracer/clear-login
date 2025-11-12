@@ -82,14 +82,24 @@ export default function CandidatesPage() {
     setNewApplicants(newApps);
     setInterviewingCandidates(interviewing);
     setLoading(false);
+
+    // When this page is visited, update the seen count
+    localStorage.setItem('lastSeenCandidateCount', newApps.length.toString());
+    // Dispatch an event to notify the sidebar to re-check
+    window.dispatchEvent(new CustomEvent('new-candidates', { detail: { hasNew: false }}));
+
   }, []);
 
   useEffect(() => {
     loadData();
     // Listen for storage changes to keep data in sync across tabs
-    window.addEventListener('storage', loadData);
+    const handleStorageChange = () => {
+        loadData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      window.removeEventListener('storage', loadData);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [loadData]);
 
