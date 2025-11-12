@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { type ApplicationData } from "@/lib/schemas";
-import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX } from "lucide-react";
+import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
+import { InterviewReviewForm } from "@/components/dashboard/interview-review-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 function ApplicationViewContent() {
     const router = useRouter();
@@ -52,7 +55,10 @@ function ApplicationViewContent() {
     const handleSetToInterview = (id: string) => {
         handleAction(
             () => updateCandidateStatus(id, 'interview'),
-            () => router.push('/dashboard'),
+            () => {
+                toast({ title: "Candidate Updated", description: "Moved to interview phase."});
+                router.push('/dashboard/candidates');
+            },
             "Error setting to interview"
         );
     }
@@ -74,7 +80,10 @@ function ApplicationViewContent() {
     const handleMarkAsNewHire = (id: string) => {
         handleAction(
             () => updateCandidateStatus(id, 'new-hire'),
-            () => router.push('/dashboard/new-hires'),
+            () => {
+                toast({ title: "Candidate Approved!", description: "Moved to New Hire phase." });
+                router.push('/dashboard/new-hires');
+            },
             "Error marking as new hire"
         );
     }
@@ -85,6 +94,12 @@ function ApplicationViewContent() {
             () => router.push('/dashboard/employees'),
             "Error marking as employee"
         );
+    }
+
+    const handleReviewSubmit = () => {
+        if (applicationData) {
+            handleMarkAsNewHire(applicationData.id);
+        }
     }
 
     if (loading) {
@@ -146,10 +161,10 @@ function ApplicationViewContent() {
                             </Button>
                         </>
                     )}
-                    {(isCandidate || isInterview) && (
-                        <Button onClick={() => handleMarkAsNewHire(applicationData.id)}>
+                    {isInterview && (
+                         <Button onClick={() => handleMarkAsNewHire(applicationData.id)}>
                             <UserCheck className="mr-2 h-4 w-4" />
-                            Mark as New Hire
+                            Approve for Hire
                         </Button>
                     )}
                     {isNewHire && (
@@ -163,7 +178,25 @@ function ApplicationViewContent() {
                     </Button>
                 </div>
             </div>
-            <ApplicationView data={applicationData} />
+             {isInterview ? (
+                <Tabs defaultValue="application">
+                    <TabsList>
+                        <TabsTrigger value="application"><FileText className="mr-2 h-4 w-4"/> Original Application</TabsTrigger>
+                        <TabsTrigger value="interview"><MessageSquare className="mr-2 h-4 w-4"/> Interview Review</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="application">
+                        <ApplicationView data={applicationData} />
+                    </TabsContent>
+                    <TabsContent value="interview">
+                        <InterviewReviewForm 
+                            candidateName={`${applicationData.firstName} ${applicationData.lastName}`} 
+                            onReviewSubmit={handleReviewSubmit}
+                        />
+                    </TabsContent>
+                </Tabs>
+            ) : (
+                <ApplicationView data={applicationData} />
+            )}
         </div>
     );
 }
