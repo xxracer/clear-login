@@ -171,6 +171,28 @@ export async function updateCandidateWithFileUpload(id: string, file: File, titl
      }
 }
 
+export async function updateCandidateLicense(id: string, licenseFile: File, expirationDate: Date): Promise<{ success: boolean, error?: string }> {
+    try {
+        const candidates = getAllFromStorage();
+        const index = candidates.findIndex(c => c.id === id);
+
+        if (index > -1) {
+            const dataUrl = await fileToDataURL(licenseFile);
+            candidates[index].driversLicense = dataUrl;
+            candidates[index].driversLicenseExpiration = expirationDate.toISOString();
+            
+            saveAllToStorage(candidates);
+            return { success: true };
+        } else {
+            throw new Error("Could not find candidate to update.");
+        }
+    } catch(e) {
+        console.error("Error updating license:", e);
+        return { success: false, error: (e as Error).message || "Failed to update license." };
+    }
+}
+
+
 export async function updateCandidateWithInterviewReview(id: string, reviewData: InterviewReviewSchema): Promise<{ success: boolean; error?: string }> {
     try {
         const candidates = getAllFromStorage();
