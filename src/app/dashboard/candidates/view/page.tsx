@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { type ApplicationData, type InterviewReviewSchema } from "@/lib/schemas";
-import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX, FileText, ChevronLeft, FileUp } from "lucide-react";
+import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX, FileText, ChevronLeft, FileUp, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
@@ -15,6 +15,33 @@ import { InterviewReviewForm } from "@/components/dashboard/interview-review-for
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProgressTracker } from "@/components/dashboard/progress-tracker";
 import { DocumentationPhase } from "@/components/dashboard/documentation-phase";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { detectMissingDocuments, DetectMissingDocumentsInput } from "@/ai/flows/detect-missing-documents";
+import { getCompanies } from "@/app/actions/company-actions";
+
+
+function buildCandidateProfile(candidate: ApplicationData | null): string {
+  if (!candidate) return "No candidate data available.";
+  
+  const submittedDocs: string[] = [];
+  if (candidate.resume) submittedDocs.push("Resume/CV");
+  if (candidate.applicationPdfUrl) submittedDocs.push("Application Form");
+  if (candidate.driversLicense) submittedDocs.push("Driver's License");
+  if (candidate.idCard) submittedDocs.push("Proof of Identity / ID Card");
+  if (candidate.proofOfAddress) submittedDocs.push("Proof of Address");
+  if (candidate.i9) submittedDocs.push("I-9 Form");
+  if (candidate.w4) submittedDocs.push("W-4 Form");
+  if (candidate.educationalDiplomas) submittedDocs.push("Educational Diplomas");
+  candidate.documents?.forEach(d => submittedDocs.push(d.title));
+
+
+  return `
+    Name: ${candidate.firstName} ${candidate.lastName}
+    Position Applying For: ${candidate.position}
+    Applying to: ${candidate.applyingFor.join(", ")}
+    Submitted Documents: ${submittedDocs.join(", ") || 'None'}
+  `;
+}
 
 
 function ApplicationViewContent() {
@@ -27,6 +54,11 @@ function ApplicationViewContent() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("application");
     const [isInterviewSubmitted, setIsInterviewSubmitted] = useState(false);
+
+    // State for Hire Confirmation Dialog
+    const [isHireConfirmOpen, setIsHireConfirmOpen] = useState(false);
+    const [isCheckingDocs, setIsCheckingDocs] = useState(false);
+    const [docsCheckResult, setDocsCheckResult] = useState<string[] | null>(null);
 
 
     const loadData = useCallback(async () => {
@@ -106,7 +138,6 @@ function ApplicationViewContent() {
             () => updateCandidateWithInterviewReview(candidateId, reviewData),
             async () => {
                 toast({ title: "Interview Reviewed", description: "You can now proceed to the documentation phase." });
-                // Reload data to get the updated review status, then switch tab
                 await loadData();
                 setActiveTab("documentation");
             },
@@ -114,12 +145,52 @@ function ApplicationViewContent() {
         );
     }
 
+    const handleCheckDocsForHire = async () => {
+        if (!applicationData) return;
+        setIsCheckingDocs(true);
+        setDocsCheckResult(null);
 
-    const handleMarkAsNewHire = (id: string) => {
+        const companies = await getCompanies();
+        const activeProcess = companies[0]?.onboardingProcesses?.[0];
+        
+        const submittedDocs: string[] = [];
+        if (applicationData.resume) submittedDocs.push("Resume/CV");
+        if (applicationData.applicationPdfUrl) submittedDocs.push("Application Form");
+        if (applicationData.driversLicense) submittedDocs.push("Driver's License");
+        if (applicationData.idCard) submittedDocs.push("Proof of Identity / ID Card");
+        if (applicationData.proofOfAddress) submittedDocs.push("Proof of Address");
+        if (applicationData.i9) submittedDocs.push("I-9 Form");
+        if (applicationData.w4) submittedDocs.push("W-4 Form");
+        if (applicationData.educationalDiplomas) submittedDocs.push("Educational Diplomas");
+        applicationData.documents?.forEach(d => submittedDocs.push(d.title));
+
+        const input: DetectMissingDocumentsInput = {
+          candidateProfile: buildCandidateProfile(applicationData),
+          onboardingPhase: "Detailed Documentation",
+          submittedDocuments: submittedDocs,
+          requiredDocuments: activeProcess?.requiredDocs || [],
+        };
+        
+        try {
+            const result = await detectMissingDocuments(input);
+            setDocsCheckResult(result.missingDocuments);
+        } catch (e) {
+            console.error(e);
+            // In case of AI error, assume docs might be missing
+            setDocsCheckResult(["AI check failed, please verify manually."]);
+        } finally {
+            setIsCheckingDocs(false);
+            setIsHireConfirmOpen(true);
+        }
+    };
+
+
+    const handleConfirmHire = (id: string) => {
         handleAction(
             () => updateCandidateStatus(id, 'new-hire'),
             () => {
                 toast({ title: "Candidate Approved!", description: "Moved to New Hire phase." });
+                setIsHireConfirmOpen(false);
                 router.push('/dashboard/new-hires');
             },
             "Error marking as new hire"
@@ -224,8 +295,8 @@ function ApplicationViewContent() {
                         <div className="space-y-4">
                             <DocumentationPhase candidateId={candidateId} />
                             <div className="flex justify-end pt-4">
-                                <Button onClick={() => handleMarkAsNewHire(applicationData.id)} disabled={applicationData.status === 'new-hire' || applicationData.status === 'employee' || applicationData.status === 'inactive'}>
-                                    <UserCheck className="mr-2 h-4 w-4" />
+                                <Button onClick={handleCheckDocsForHire} disabled={applicationData.status !== 'interview' || isCheckingDocs}>
+                                    {isCheckingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
                                     Mark as New Hire
                                 </Button>
                             </div>
@@ -233,6 +304,45 @@ function ApplicationViewContent() {
                     )}
                 </TabsContent>
             </Tabs>
+
+            <AlertDialog open={isHireConfirmOpen} onOpenChange={setIsHireConfirmOpen}>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm New Hire</AlertDialogTitle>
+                        {docsCheckResult && docsCheckResult.length > 0 ? (
+                            <AlertDialogDescription>
+                                <div className="p-4 rounded-md bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800/50">
+                                    <div className="flex items-start gap-3">
+                                        <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5"/>
+                                        <div>
+                                            <h3 className="font-semibold text-yellow-800 dark:text-yellow-300">Warning: Missing Documents</h3>
+                                            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                                                The AI check suggests the following documents might be missing:
+                                            </p>
+                                            <ul className="list-disc pl-5 mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                                                {docsCheckResult.map((doc, i) => <li key={i}>{doc}</li>)}
+                                            </ul>
+                                            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-3">
+                                                Are you sure you want to proceed with hiring?
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </AlertDialogDescription>
+                        ) : (
+                             <AlertDialogDescription>
+                                All required documents appear to be submitted. Are you sure you want to mark {applicationData.firstName} as a new hire?
+                            </AlertDialogDescription>
+                        )}
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleConfirmHire(applicationData.id)}>
+                            Yes, Mark as New Hire
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
@@ -244,5 +354,7 @@ export default function ApplicationViewPage() {
         </Suspense>
     )
 }
+
+    
 
     
