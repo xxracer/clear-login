@@ -3,6 +3,7 @@
 
 import { generateId } from "@/lib/local-storage-client";
 import { type ApplicationData, type ApplicationSchema, type InterviewReviewSchema } from "@/lib/schemas";
+import { uploadKvFile } from "./kv-actions";
 
 // This file now acts as a client-side API for interacting with localStorage.
 
@@ -143,14 +144,14 @@ export async function updateCandidateWithDocuments(id: string, documents: { [key
     }
 }
 
-export async function updateCandidateWithFileUpload(id: string, file: File, title: string, type: 'required' | 'misc'): Promise<{ success: boolean, error?: string }> {
+export async function updateCandidateWithFileUpload(employeeId: string, file: File, title: string, type: 'required' | 'misc'): Promise<{ success: boolean, error?: string }> {
      try {
         const candidates = getAllFromStorage();
-        const index = candidates.findIndex(c => c.id === id);
+        const index = candidates.findIndex(c => c.id === employeeId);
 
         if (index > -1) {
-            const dataUrl = await fileToDataURL(file);
-            const newDoc = { id: generateId(), title: title, url: dataUrl };
+            const fileKey = await uploadKvFile(file, `${employeeId}/${type}/${Date.now()}-${file.name}`);
+            const newDoc = { id: fileKey, title: title, url: `/employees/${encodeURIComponent(employeeId)}/file/${encodeURIComponent(fileKey)}` };
 
             if (type === 'required') {
                 if (!candidates[index].documents) candidates[index].documents = [];

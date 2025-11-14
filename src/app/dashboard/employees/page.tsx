@@ -51,12 +51,23 @@ function EmployeeList({
     const [inactiveInfo, setInactiveInfo] = useState<{ date: Date | undefined, reason: string, description: string }>({ date: new Date(), reason: '', description: '' });
     const { toast } = useToast();
 
-    // State for uploading new documents - independent for each type to avoid conflicts
-    const [newRequiredDoc, setNewRequiredDoc] = useState<{ file: File | null; title: string }>({ file: null, title: '' });
-    const [newMiscDoc, setNewMiscDoc] = useState<{ file: File | null; title: string }>({ file: null, title: '' });
+    // State for uploading new documents - we need separate state for each employee accordion to avoid conflicts
+    const [uploadStates, setUploadStates] = useState<{[key: string]: { required: { file: File | null; title: string }, misc: { file: File | null; title: string }}}>({});
 
     const [uploadTarget, setUploadTarget] = useState<{ employeeId: string; type: 'required' | 'misc' } | null>(null);
     const [activeAccordionItem, setActiveAccordionItem] = useState<string | null>(null);
+    
+    // Initialize state for each employee
+    useEffect(() => {
+        const initialStates: {[key: string]: { required: { file: File | null; title: string }, misc: { file: File | null; title: string }}} = {};
+        employees.forEach(e => {
+            initialStates[e.id] = {
+                required: { file: null, title: '' },
+                misc: { file: null, title: '' }
+            }
+        });
+        setUploadStates(initialStates);
+    }, [employees]);
 
 
     const openInactiveModal = (id: string) => {
@@ -84,21 +95,36 @@ function EmployeeList({
     }
     
     const handleUploadDocument = (employeeId: string, type: 'required' | 'misc') => {
-        const docState = type === 'required' ? newRequiredDoc : newMiscDoc;
-        if (!docState.file || !docState.title) {
+        const docState = uploadStates[employeeId]?.[type];
+        if (!docState || !docState.file || !docState.title) {
             toast({ variant: 'destructive', title: 'Upload Failed', description: 'Please select a file and provide a title.'});
             return;
         }
         setUploadTarget({ employeeId, type });
         onUpload(employeeId, docState.file, docState.title, type);
         
-        // Reset the correct form
-        if (type === 'required') {
-            setNewRequiredDoc({ file: null, title: '' });
-        } else {
-            setNewMiscDoc({ file: null, title: '' });
-        }
+        // Reset the form for that specific employee and type
+        setUploadStates(prev => ({
+            ...prev,
+            [employeeId]: {
+                ...prev[employeeId],
+                [type]: { file: null, title: '' }
+            }
+        }));
     };
+    
+    const handleUploadStateChange = (employeeId: string, type: 'required' | 'misc', field: 'file' | 'title', value: any) => {
+        setUploadStates(prev => ({
+            ...prev,
+            [employeeId]: {
+                ...prev[employeeId],
+                [type]: {
+                    ...(prev[employeeId]?.[type] || { file: null, title: '' }),
+                    [field]: value
+                }
+            }
+        }))
+    }
     
     const isCurrentlyUploading = (employeeId: string, type: 'required' | 'misc') => {
       return isUploading && uploadTarget?.employeeId === employeeId && uploadTarget?.type === type;
@@ -144,8 +170,15 @@ function EmployeeList({
                                         {(!employee.documents || employee.documents.length === 0) && <p className="text-sm text-muted-foreground">No required documents uploaded.</p>}
                                         <div className="mt-4 pt-4 border-t space-y-2">
                                             <h4 className="font-medium">Upload New Required Document</h4>
-                                            <Input placeholder="Document Title (e.g., Driver's License)" value={newRequiredDoc.title} onChange={e => setNewRequiredDoc(prev => ({ ...prev, title: e.target.value }))} />
-                                            <Input type="file" onChange={e => setNewRequiredDoc(prev => ({...prev, file: e.target.files?.[0] || null}))} />
+                                            <Input 
+                                                placeholder="Document Title (e.g., Driver's License)" 
+                                                value={uploadStates[employee.id]?.required.title || ''} 
+                                                onChange={e => handleUploadStateChange(employee.id, 'required', 'title', e.target.value)}
+                                            />
+                                            <Input 
+                                                type="file" 
+                                                onChange={e => handleUploadStateChange(employee.id, 'required', 'file', e.target.files?.[0] || null)}
+                                            />
                                             <Button size="sm" onClick={() => handleUploadDocument(employee.id, 'required')} disabled={isCurrentlyUploading(employee.id, 'required')}>
                                                 {isCurrentlyUploading(employee.id, 'required') ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                                 Upload
@@ -170,8 +203,15 @@ function EmployeeList({
                                         {(!employee.miscDocuments || employee.miscDocuments.length === 0) && <p className="text-sm text-muted-foreground">No miscellaneous documents uploaded.</p>}
                                         <div className="mt-4 pt-4 border-t space-y-2">
                                             <h4 className="font-medium">Upload New Miscellaneous Document</h4>
-                                            <Input placeholder="Document Title (e.g., Performance Review)" value={newMiscDoc.title} onChange={e => setNewMiscDoc(prev => ({...prev, title: e.target.value }))} />
-                                            <Input type="file" onChange={e => setNewMiscDoc(prev => ({...prev, file: e.target.files?.[0] || null}))} />
+                                            <Input 
+                                                placeholder="Document Title (e.g., Performance Review)" 
+                                                value={uploadStates[employee.id]?.misc.title || ''} 
+                                                onChange={e => handleUploadStateChange(employee.id, 'misc', 'title', e.target.value)} 
+                                            />
+                                            <Input 
+                                                type="file" 
+                                                onChange={e => handleUploadStateChange(employee.id, 'misc', 'file', e.target.files?.[0] || null)} 
+                                            />
                                             <Button size="sm" onClick={() => handleUploadDocument(employee.id, 'misc')} disabled={isCurrentlyUploading(employee.id, 'misc')}>
                                                 {isCurrentlyUploading(employee.id, 'misc') ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                                 Upload
@@ -328,12 +368,14 @@ export default function EmployeesPage() {
 
       toast({ title: 'Deleting...', description: 'Please wait while the file is deleted.'});
       try {
+          // Here, we also need to delete the file from KV storage if possible,
+          // but for now, we'll just remove the reference.
           await deleteEmployeeFile(employeeId, fileId);
-          toast({ title: 'File Deleted', description: 'The document has been removed.'});
+          toast({ title: 'File Deleted', description: 'The document reference has been removed.'});
           loadData();
       } catch (error) {
           console.error(error);
-          toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete the file.'});
+          toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete the file reference.'});
       }
   }
 

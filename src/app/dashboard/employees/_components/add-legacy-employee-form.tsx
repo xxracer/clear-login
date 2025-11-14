@@ -18,6 +18,7 @@ import { format, parse } from "date-fns";
 import { extractEmployeeDataFromPdf } from "@/ai/flows/extract-employee-data";
 import { createLegacyEmployee } from "@/app/actions/client-actions";
 import { ExtractEmployeeDataOutput } from "@/lib/schemas";
+import { uploadKvFile } from "@/app/actions/kv-actions";
 
 
 // Helper to convert a File to a base64 data URI
@@ -41,7 +42,6 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [extractedData, setExtractedData] = useState<ExtractEmployeeDataOutput | null>(null);
-    const [originalPdfFile, setOriginalPdfFile] = useState<File | null>(null);
     const [hireDate, setHireDate] = useState<Date | null>(null);
 
     const { control, handleSubmit, watch, formState: { errors } } = useForm<z.infer<typeof formSchema>>({
@@ -54,8 +54,7 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
         setIsLoading(true);
         setError(null);
         setExtractedData(null);
-        setHireDate(data.hireDate); // Store hire date
-        setOriginalPdfFile(data.pdf); // Store original file
+        setHireDate(data.hireDate); 
         
         try {
             const pdfDataUri = await fileToDataURL(data.pdf);
@@ -70,10 +69,14 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
     };
     
     const handleConfirmAndSave = async () => {
-        if (!extractedData || !hireDate || !originalPdfFile) return;
+        if (!extractedData || !hireDate || !pdfFile) return;
         setIsLoading(true);
         
         try {
+            // First, upload the original PDF to KV and get its key
+            const tempId = Date.now().toString(); // a temporary id for folder structure
+            const applicationPdfUrl = await uploadKvFile(pdfFile, `${tempId}/legacy-application.pdf`);
+
             // The AI returns the date as a "YYYY-MM-DD" string. Parse it into a Date object.
             const expirationDateStr = extractedData.driversLicenseExpiration || "";
             const expirationDate = expirationDateStr ? parse(expirationDateStr, 'yyyy-MM-dd', new Date()) : undefined;
@@ -92,9 +95,10 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
                 emergencyContact: extractedData.emergencyContact,
                 documents: [],
                 miscDocuments: [],
+                applicationPdfUrl, // Save the key to the uploaded PDF
             };
             
-            const result = await createLegacyEmployee(employeeData, originalPdfFile);
+            const result = await createLegacyEmployee(employeeData);
             
             if (result.success) {
                 toast({ title: "Employee Added", description: `${extractedData.firstName} ${extractedData.lastName} has been added to the system.` });
