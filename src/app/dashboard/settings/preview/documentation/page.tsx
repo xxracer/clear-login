@@ -56,9 +56,9 @@ export default function DocumentationPreviewPage() {
                 <CardContent>
                     <p className="mb-4">Company Name: <span className="font-semibold">{company?.name || 'Your Company Name'}</span></p>
                      <p className="mb-4">Required Documents:</p>
-                    {(company?.requiredDocs && company.requiredDocs.length > 0) ? (
+                    {(company?.onboardingProcesses?.[0]?.requiredDocs && company.onboardingProcesses[0].requiredDocs.length > 0) ? (
                         <ul className="list-disc pl-5 space-y-2">
-                            {company.requiredDocs.map(doc => (
+                            {company.onboardingProcesses[0].requiredDocs.map(doc => (
                                 <li key={doc.id}>{doc.label} (User will upload file)</li>
                             ))}
                         </ul>
