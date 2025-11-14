@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -490,24 +491,30 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Process Builder</CardTitle>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground cursor-pointer" /></Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>About the AI Process Builder</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Use AI to generate new onboarding processes. You can use the Guided Wizard for a step-by-step approach or the Free-form Prompt for more direct control.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogAction>Got it!</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Process Builder</CardTitle>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground cursor-pointer" /></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>About the AI Process Builder</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Use AI to generate new onboarding processes. You can use the Guided Wizard for a step-by-step approach or the Free-form Prompt for more direct control.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogAction>Got it!</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
+            <div className="flex items-center gap-2 text-destructive animate-pulse">
+                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
+                <ArrowRight className="h-5 w-5" />
+            </div>
           </div>
           <CardDescription>Generate new onboarding processes using AI.</CardDescription>
         </CardHeader>
@@ -531,18 +538,22 @@ export default function SettingsPage() {
                     <div className="p-4 border rounded-lg space-y-3">
                          <div className="flex items-center justify-between">
                             <Label htmlFor="prompt-p1" className="font-semibold">Phase 1: Application Form</Label>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Phase 1 Prompt</AlertDialogTitle>
-                                        <AlertDialogDescription>Describe the application form you want to create. For example: "Create a simple application form for a truck driver position. I need their name, contact info, driver's license number, and 5 years of employment history."</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                             <div className="flex items-center gap-2 text-destructive animate-pulse">
+                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
+                                <ArrowRight className="h-5 w-5" />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 1 Prompt</AlertDialogTitle>
+                                            <AlertDialogDescription>Describe the application form you want to create. For example: "Create a simple application form for a truck driver position. I need their name, contact info, driver's license number, and 5 years of employment history."</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <Textarea id="prompt-p1" placeholder="Describe the application form you need..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
                         <Button onClick={handleGenerateFromPrompt} disabled={isGenerating}>
@@ -558,18 +569,22 @@ export default function SettingsPage() {
                                 <Label htmlFor="prompt-p2" className="font-semibold">Phase 2: Interview Screen</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Phase 2 Prompt</AlertDialogTitle>
-                                        <AlertDialogDescription>This will allow you to generate custom questions and layouts for the interview review phase.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                             <div className="flex items-center gap-2 text-destructive animate-pulse">
+                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
+                                <ArrowRight className="h-5 w-5" />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 2 Prompt</AlertDialogTitle>
+                                            <AlertDialogDescription>This will allow you to generate custom questions and layouts for the interview review phase.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <Textarea id="prompt-p2" placeholder="Describe the interview questions or screen..." disabled />
                         <Button disabled>Generate</Button>
@@ -582,18 +597,22 @@ export default function SettingsPage() {
                                 <Label htmlFor="prompt-p3" className="font-semibold">Phase 3: Required Documentation</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Phase 3 Prompt</AlertDialogTitle>
-                                        <AlertDialogDescription>This will allow you to specify which documents are required for a specific role.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex items-center gap-2 text-destructive animate-pulse">
+                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
+                                <ArrowRight className="h-5 w-5" />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 3 Prompt</AlertDialogTitle>
+                                            <AlertDialogDescription>This will allow you to specify which documents are required for a specific role.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogAction>Got it!</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <Textarea id="prompt-p3" placeholder="List the required documents..." disabled />
                         <Button disabled>Generate</Button>
@@ -618,5 +637,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
 
     
