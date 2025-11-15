@@ -507,7 +507,7 @@ export default function SettingsPage() {
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogAction>Got it!</AlertDialogAction>
+                      <AlertDialogAction onClick={() => setAiBuilderHintViewed(true)}>Got it!</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -640,7 +640,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
-
-    
