@@ -52,6 +52,7 @@ export default function SettingsPage() {
 
   // State for the "click here first" hint
   const [companyDetailsHintViewed, setCompanyDetailsHintViewed] = useState(false);
+  const [aiBuilderHintViewed, setAiBuilderHintViewed] = useState(false);
   const showCompanyDetailsHint = !company.name && !companyDetailsHintViewed;
 
 
@@ -270,7 +271,7 @@ export default function SettingsPage() {
       <Card>
         <CardContent className="p-4">
           <div className="border rounded-lg p-4 relative">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-2">
                     <CardTitle className="flex items-center gap-2 text-xl">
                         <Building className="h-5 w-5" />
@@ -297,7 +298,7 @@ export default function SettingsPage() {
                 {showCompanyDetailsHint && (
                     <div className="flex items-center gap-2 text-primary animate-pulse">
                         <p className="text-sm font-medium">Click here first!</p>
-                        <ArrowRight className="h-5 w-5 -scale-x-100" />
+                        <ArrowRight className="h-5 w-5" />
                     </div>
                 )}
             </div>
@@ -491,7 +492,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
                 <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Process Builder</CardTitle>
                 <AlertDialog>
@@ -511,10 +512,12 @@ export default function SettingsPage() {
                   </AlertDialogContent>
                 </AlertDialog>
             </div>
-            <div className="flex items-center gap-2 text-destructive animate-pulse">
-                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
-                <ArrowRight className="h-5 w-5" />
-            </div>
+             {!aiBuilderHintViewed && (
+                <div className="flex items-center gap-2 text-primary animate-pulse">
+                    <p className="text-sm font-medium hidden sm:block">Click here first!</p>
+                    <ArrowRight className="h-5 w-5" />
+                </div>
+            )}
           </div>
           <CardDescription>Generate new onboarding processes using AI.</CardDescription>
         </CardHeader>
@@ -538,7 +541,7 @@ export default function SettingsPage() {
                     <div className="p-4 border rounded-lg space-y-3">
                          <div className="flex items-center justify-between">
                             <Label htmlFor="prompt-p1" className="font-semibold">Phase 1: Application Form</Label>
-                             <div className="flex items-center gap-2 text-destructive animate-pulse">
+                             <div className="flex items-center gap-2 text-primary animate-pulse">
                                 <p className="text-sm font-medium hidden sm:block">Click here first!</p>
                                 <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
@@ -569,7 +572,7 @@ export default function SettingsPage() {
                                 <Label htmlFor="prompt-p2" className="font-semibold">Phase 2: Interview Screen</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
-                             <div className="flex items-center gap-2 text-destructive animate-pulse">
+                             <div className="flex items-center gap-2 text-primary animate-pulse">
                                 <p className="text-sm font-medium hidden sm:block">Click here first!</p>
                                 <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
@@ -597,7 +600,7 @@ export default function SettingsPage() {
                                 <Label htmlFor="prompt-p3" className="font-semibold">Phase 3: Required Documentation</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
-                            <div className="flex items-center gap-2 text-destructive animate-pulse">
+                            <div className="flex items-center gap-2 text-primary animate-pulse">
                                 <p className="text-sm font-medium hidden sm:block">Click here first!</p>
                                 <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
