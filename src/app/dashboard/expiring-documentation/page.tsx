@@ -1,7 +1,8 @@
 
 'use client'
 
-import { getPersonnel, updateCandidateLicense, getCompanies } from "@/app/actions/client-actions";
+import { getPersonnel, updateCandidateLicense } from "@/app/actions/client-actions";
+import { getCompanies } from "@/app/actions/company-actions";
 import { CandidatesActions } from "@/app/dashboard/candidates/_components/candidates-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
