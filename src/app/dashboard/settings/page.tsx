@@ -492,7 +492,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
                 <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Process Builder</CardTitle>
                 <AlertDialog>
