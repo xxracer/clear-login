@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -491,36 +490,13 @@ export default function SettingsPage() {
 
 
       <Card>
-        <CardHeader>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <CardTitle className="flex items-center gap-2 text-xl"><Wand2 className="h-5 w-5 text-primary" /> AI-Powered Process Builder</CardTitle>
-                    <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground cursor-pointer" /></Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>About the AI Process Builder</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Use AI to generate new onboarding processes. You can use the Guided Wizard for a step-by-step approach or the Free-form Prompt for more direct control.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setAiBuilderHintViewed(true)}>Got it!</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-                {!aiBuilderHintViewed && (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                        <p className="text-sm font-medium hidden sm:block">Click here first!</p>
-                        <ArrowRight className="h-5 w-5" />
-                    </div>
-                )}
-            </div>
-          <CardDescription>Generate new onboarding processes using AI.</CardDescription>
-        </CardHeader>
+          <CardHeader>
+              <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-headline font-bold text-foreground flex items-center gap-2"><Wand2 className="h-5 w-5 text-primary" />AI-Powered Process Builder</h2>
+                  <ArrowRight className="h-5 w-5 text-primary" />
+              </div>
+              <CardDescription>Generate new onboarding processes using AI.</CardDescription>
+          </CardHeader>
         <CardContent className="space-y-6">
              <RadioGroup value={aiBuilderMode} onValueChange={(v) => setAiBuilderMode(v as 'wizard' | 'prompt')} className="flex items-center gap-4">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="wizard" id="wizard" /><Label htmlFor="wizard">Guided Wizard</Label></div>
@@ -542,8 +518,6 @@ export default function SettingsPage() {
                          <div className="flex items-center justify-between">
                             <Label htmlFor="prompt-p1" className="font-semibold">Phase 1: Application Form</Label>
                              <div className="flex items-center gap-2 text-primary animate-pulse">
-                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
-                                <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
@@ -573,8 +547,6 @@ export default function SettingsPage() {
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
                              <div className="flex items-center gap-2 text-primary animate-pulse">
-                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
-                                <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
@@ -601,8 +573,6 @@ export default function SettingsPage() {
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
                             <div className="flex items-center gap-2 text-primary animate-pulse">
-                                <p className="text-sm font-medium hidden sm:block">Click here first!</p>
-                                <ArrowRight className="h-5 w-5" />
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-7 w-7 -ml-2"><Info className="h-5 w-5 text-muted-foreground" /></Button>
@@ -640,3 +610,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
