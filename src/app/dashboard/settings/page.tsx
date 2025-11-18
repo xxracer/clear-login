@@ -322,7 +322,7 @@ export default function SettingsPage() {
                   </div>
               )}
           </CardHeader>
-        <fieldset disabled={showAiBuilderHint}>
+        <fieldset>
         <CardContent className="space-y-6">
              <RadioGroup value={aiBuilderMode} onValueChange={(v) => setAiBuilderMode(v as 'wizard' | 'prompt')} className="flex items-center gap-4">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="wizard" id="wizard" /><Label htmlFor="wizard">Guided Wizard</Label></div>
@@ -436,3 +436,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
