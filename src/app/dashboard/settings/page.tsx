@@ -67,6 +67,11 @@ export default function SettingsPage() {
       const firstCompany = companies[0] || {};
       
       setCompany(firstCompany);
+
+      if (firstCompany.id) {
+          setIsCompanySaved(true);
+      }
+
       if (firstCompany.logo) {
         try {
           const url = await getFile(firstCompany.logo);
@@ -278,26 +283,28 @@ export default function SettingsPage() {
                     <Library className="h-5 w-5" />
                     <CardTitle className="text-xl">Onboarding Processes</CardTitle>
                 </div>
-                 <div className="flex items-center gap-2 text-primary animate-pulse">
-                    <p className="text-sm font-medium hidden md:block">Click here first!</p>
-                    <ArrowRight className="h-4 w-4 hidden md:block" />
-                    <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+                 {showProcessesHint && (
+                    <div className="flex items-center gap-2 text-primary animate-pulse">
+                        <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                        <ArrowRight className="h-4 w-4 hidden md:block" />
+                        <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                 )}
             </div>
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
@@ -305,16 +312,14 @@ export default function SettingsPage() {
           <div className="md:col-span-1 space-y-2">
             <h3 className="font-semibold px-2">Available Processes</h3>
             <div className="flex flex-col gap-1">
-              {(company.onboardingProcesses || []).map(p => (
-                 <div key={p.id} className={cn("flex items-center justify-between p-2 rounded-md", activeProcessId === p.id && "bg-muted")}>
-                     <button
-                        className="flex-1 text-left"
-                        onClick={() => setActiveProcessId(p.id)}
-                     >
-                        <span className="font-medium">{p.name}</span>
-                     </button>
-                 </div>
-              ))}
+                <div className={cn("flex items-center justify-between p-2 rounded-md", activeProcessId === company.onboardingProcesses?.[0]?.id && "bg-muted")}>
+                    <button
+                    className="flex-1 text-left"
+                    onClick={() => setActiveProcessId(company.onboardingProcesses?.[0]?.id || null)}
+                    >
+                    <span className="font-medium">{company.onboardingProcesses?.[0]?.name || 'Default Process'}</span>
+                    </button>
+                </div>
             </div>
           </div>
 
@@ -545,5 +550,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
 
     
