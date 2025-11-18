@@ -92,8 +92,6 @@ function DocumentationPageContent() {
          )
     }
 
-    const requiredDocs: RequiredDoc[] = process?.requiredDocs || [];
-
     return (
         <div className="flex min-h-screen flex-col items-center bg-background p-4">
             <div className="w-full max-w-4xl">
@@ -116,7 +114,6 @@ function DocumentationPageContent() {
                 <DocumentationForm
                     companyName={company?.name || ''}
                     candidateId={candidateId}
-                    requiredDocs={requiredDocs}
                 />
                 ) : (
                 <Card className="w-full max-w-lg mx-auto text-center">
