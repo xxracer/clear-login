@@ -18,6 +18,8 @@ import { DocumentationPhase } from "@/components/dashboard/documentation-phase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { detectMissingDocuments, DetectMissingDocumentsInput } from "@/ai/flows/detect-missing-documents";
 import { getCompanies } from "@/app/actions/company-actions";
+import { CopyDocumentationLink } from "@/components/dashboard/copy-documentation-link";
+import { OnboardingProcess } from "@/lib/company-schemas";
 
 
 function buildCandidateProfile(candidate: ApplicationData | null): string {
@@ -54,6 +56,8 @@ function ApplicationViewContent() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("application");
     const [isInterviewSubmitted, setIsInterviewSubmitted] = useState(false);
+    const [activeProcess, setActiveProcess] = useState<OnboardingProcess | null>(null);
+
 
     // State for Hire Confirmation Dialog
     const [isHireConfirmOpen, setIsHireConfirmOpen] = useState(false);
@@ -66,6 +70,18 @@ function ApplicationViewContent() {
             setLoading(true);
             const data = await getCandidate(candidateId);
             setApplicationData(data);
+
+            const companies = await getCompanies();
+            if (companies && companies.length > 0) {
+              const currentCompany = companies[0];
+              let foundProcess = currentCompany.onboardingProcesses?.find(p => 
+                data?.applyingFor?.includes(p.name)
+              ) || null;
+              if (!foundProcess && currentCompany.onboardingProcesses && currentCompany.onboardingProcesses.length > 0) {
+                foundProcess = currentCompany.onboardingProcesses[0];
+              }
+              setActiveProcess(foundProcess);
+            }
             
             if (data?.interviewReview) {
                 setIsInterviewSubmitted(true);
@@ -294,7 +310,8 @@ function ApplicationViewContent() {
                     { (isDocumentationPhase || isInterviewSubmitted) && (
                         <div className="space-y-4">
                             <DocumentationPhase candidateId={candidateId} />
-                            <div className="flex justify-end pt-4">
+                            <div className="flex justify-end pt-4 gap-2">
+                                <CopyDocumentationLink candidateId={candidateId} processId={activeProcess?.id} />
                                 <Button onClick={handleCheckDocsForHire} disabled={applicationData.status !== 'interview' || isCheckingDocs}>
                                     {isCheckingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
                                     Mark as New Hire
@@ -354,7 +371,3 @@ export default function ApplicationViewPage() {
         </Suspense>
     )
 }
-
-    
-
-    

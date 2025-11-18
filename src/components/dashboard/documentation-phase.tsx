@@ -4,37 +4,25 @@
 import { useState, useEffect, useCallback, useTransition } from "react";
 import { AlertCircle, FileCheck, Lightbulb, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { detectMissingDocuments, DetectMissingDocumentsInput } from "@/ai/flows/detect-missing-documents";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CopyDocumentationLink } from "./copy-documentation-link";
 import { getCandidate } from "@/app/actions/client-actions";
 import { ApplicationData } from "@/lib/schemas";
 import { getCompanies } from "@/app/actions/company-actions";
-import { OnboardingProcess, RequiredDoc } from "@/lib/company-schemas";
+import { OnboardingProcess } from "@/lib/company-schemas";
+import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
 
 
 function buildCandidateProfile(candidate: ApplicationData | null): string {
   if (!candidate) return "No candidate data available.";
   
-  const submittedDocs: string[] = [];
-  if (candidate.resume) submittedDocs.push("Resume/CV");
-  if (candidate.applicationPdfUrl) submittedDocs.push("Application Form");
-  if (candidate.driversLicense) submittedDocs.push("Driver's License");
-  if (candidate.idCard) submittedDocs.push("Proof of Identity / ID Card");
-  if (candidate.proofOfAddress) submittedDocs.push("Proof of Address");
-  if (candidate.i9) submittedDocs.push("I-9 Form");
-  if (candidate.w4) submittedDocs.push("W-4 Form");
-  if (candidate.educationalDiplomas) submittedDocs.push("Educational Diplomas");
-  candidate.documents?.forEach(d => submittedDocs.push(d.title));
-
-
   return `
     Name: ${candidate.firstName} ${candidate.lastName}
     Position Applying For: ${candidate.position}
     Applying to: ${candidate.applyingFor.join(", ")}
-    Submitted Documents: ${submittedDocs.join(", ") || 'None'}
   `;
 }
 
@@ -46,6 +34,10 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
   const [activeProcess, setActiveProcess] = useState<OnboardingProcess | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  
+  // New state to track checked documents for the simulation
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
+
 
   const loadData = useCallback(async () => {
     if (!candidateId) return;
@@ -57,14 +49,10 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
     if (companies && companies.length > 0) {
       const currentCompany = companies[0];
       
-      // Find the process this candidate is associated with.
-      // This is a simplified logic. A real app might have a direct link.
-      // We'll try to find a process whose name matches what the candidate applied for.
       let foundProcess = currentCompany.onboardingProcesses?.find(p => 
         candidateData?.applyingFor?.includes(p.name)
       ) || null;
       
-      // If no specific process is found, default to the first one.
       if (!foundProcess && currentCompany.onboardingProcesses && currentCompany.onboardingProcesses.length > 0) {
         foundProcess = currentCompany.onboardingProcesses[0];
       }
@@ -90,15 +78,11 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
     setMissingDocuments(null);
 
     const submittedDocs: string[] = [];
-    if (candidate.resume) submittedDocs.push("Resume/CV");
-    if (candidate.applicationPdfUrl) submittedDocs.push("Application Form");
-    if (candidate.driversLicense) submittedDocs.push("Driver's License");
-    if (candidate.idCard) submittedDocs.push("Proof of Identity / ID Card");
-    if (candidate.proofOfAddress) submittedDocs.push("Proof of Address");
-    if (candidate.i9) submittedDocs.push("I-9 Form");
-    if (candidate.w4) submittedDocs.push("W-4 Form");
-    if (candidate.educationalDiplomas) submittedDocs.push("Educational Diplomas");
-    candidate.documents?.forEach(d => submittedDocs.push(d.title));
+    (activeProcess?.requiredDocs || []).forEach(doc => {
+      if (checkedDocs[doc.id]) {
+        submittedDocs.push(doc.label);
+      }
+    });
 
     const input: DetectMissingDocumentsInput = {
       candidateProfile: buildCandidateProfile(candidate),
@@ -118,29 +102,42 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
     }
   };
   
-  const handleConnectDrive = () => {
-    toast({
-        title: "Connection Simulated",
-        description: "Successfully connected to Google Drive account.",
-    });
-  }
+  const handleCheckboxChange = (docId: string, checked: boolean) => {
+    setCheckedDocs(prev => ({
+        ...prev,
+        [docId]: checked,
+    }));
+  };
 
   if (isPending) {
     return <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
+
+  const requiredDocs = activeProcess?.requiredDocs || [];
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Request Documentation</CardTitle>
+            <CardTitle className="font-headline">Required Documentation Checklist</CardTitle>
             <CardDescription>
-                Send the candidate a link to a secure portal where they can upload the necessary documents for the final phase.
+                This is a visual checklist to simulate document submission. Check the boxes for documents the candidate has provided.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <CopyDocumentationLink candidateId={candidateId} processId={activeProcess?.id} />
+          <CardContent className="space-y-4">
+             {requiredDocs.length > 0 ? requiredDocs.map(doc => (
+                <div key={doc.id} className="flex items-center space-x-2">
+                    <Checkbox 
+                        id={doc.id}
+                        checked={!!checkedDocs[doc.id]}
+                        onCheckedChange={(checked) => handleCheckboxChange(doc.id, !!checked)}
+                    />
+                    <Label htmlFor={doc.id} className="font-normal">{doc.label}</Label>
+                </div>
+             )) : (
+                <p className="text-sm text-muted-foreground">No required documents are configured for this process.</p>
+             )}
           </CardContent>
         </Card>
 
