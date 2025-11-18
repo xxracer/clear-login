@@ -22,6 +22,7 @@ import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-bui
 import { Textarea } from "@/components/ui/textarea";
 import { generateForm } from "@/ai/flows/generate-form-flow";
 import { AiFormField } from "@/lib/company-schemas";
+import { cn } from "@/lib/utils";
 
 
 // Main component for the settings page
@@ -41,13 +42,19 @@ export default function SettingsPage() {
 
   // State for alert dialogs
   const [isCompanyDetailsDialogOpen, setCompanyDetailsDialogOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-
+  const [isProcessesDialogOpen, setIsProcessesDialogOpen] = useState(false);
   const [isAiBuilderInfoOpen, setIsAiBuilderInfoOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  
+  const [isPhase1InfoOpen, setIsPhase1InfoOpen] = useState(false);
+  const [isPhase2InfoOpen, setIsPhase2InfoOpen] = useState(false);
+  const [isPhase3InfoOpen, setIsPhase3InfoOpen] = useState(false);
+
 
 
   const showCompanyDetailsHint = !company.name;
-  const showAiBuilderHint = !company.name;
+  const showProcessesHint = !showCompanyDetailsHint && (!company.onboardingProcesses || company.onboardingProcesses.length <= 1);
+  const showAiBuilderHint = !showCompanyDetailsHint && !showProcessesHint;
 
 
   // Load initial company data
@@ -185,11 +192,33 @@ export default function SettingsPage() {
                   <Building className="h-5 w-5" />
                   <CardTitle className="text-xl">Company Details</CardTitle>
               </div>
+              {showCompanyDetailsHint && (
+                <div className="flex items-center gap-2 text-primary animate-pulse">
+                    <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                    <ArrowRight className="h-4 w-4 hidden md:block" />
+                    <AlertDialog open={isCompanyDetailsDialogOpen} onOpenChange={setCompanyDetailsDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>First, Set Up Your Company</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Before creating onboarding processes, please fill out your company's basic information. This information is saved once and cannot be changed later.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+              )}
           </CardHeader>
         <CardContent>
           <div className="border rounded-lg p-4 relative">
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
-            <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <fieldset disabled={!!company.name} className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Company Name</Label>
@@ -239,7 +268,7 @@ export default function SettingsPage() {
               </div>
             </fieldset>
             <div className="mt-6">
-              <Button size="lg" disabled={isPending} onClick={handleSave}>
+              <Button size="lg" disabled={isPending || !!company.name} onClick={handleSave}>
                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Company & Continue
               </Button>
@@ -253,35 +282,53 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Library className="h-5 w-5" />
-                    <CardTitle className="text-xl">Form Library</CardTitle>
+                    <CardTitle className="text-xl">Onboarding Processes</CardTitle>
                 </div>
+                 {showProcessesHint && (
+                    <div className="flex items-center gap-2 text-primary animate-pulse">
+                        <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                        <ArrowRight className="h-4 w-4 hidden md:block" />
+                        <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
             </div>
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column: Form List */}
           <div className="md:col-span-1 space-y-2">
-            <h3 className="font-semibold px-2">Available Forms</h3>
+            <h3 className="font-semibold px-2">Available Processes</h3>
             <div className="flex flex-col gap-1">
-              {(company.onboardingProcesses || []).filter(p => p.id === company.onboardingProcesses?.[0]?.id).map(p => (
-                 <Button
-                    key={p.id}
-                    variant={"secondary"}
-                    className="justify-start"
-                 >
-                    {p.name}
-                 </Button>
+              {(company.onboardingProcesses || []).map(p => (
+                 <div key={p.id} className={cn("flex items-center justify-between p-2 rounded-md", activeProcessId === p.id && "bg-muted")}>
+                     <button
+                        className="flex-1 text-left"
+                        onClick={() => setActiveProcessId(p.id)}
+                     >
+                        <span className="font-medium">{p.name}</span>
+                     </button>
+                 </div>
               ))}
-              <Button variant="ghost" className="justify-start text-muted-foreground" disabled>Custom Form 2 <span className="text-xs ml-auto">(Available soon)</span></Button>
-              <Button variant="ghost" className="justify-start text-muted-foreground" disabled>Custom Form 3 <span className="text-xs ml-auto">(Available soon)</span></Button>
-              <Button variant="ghost" className="justify-start text-muted-foreground" disabled>Custom Form 4 <span className="text-xs ml-auto">(Available soon)</span></Button>
             </div>
           </div>
 
-          {/* Right Column: Form Editor */}
           <div className="md:col-span-2 border rounded-lg p-4 space-y-6">
              <div className="flex items-center justify-between">
-                <p className="font-semibold">{company.onboardingProcesses?.[0]?.name || 'Default Process'}</p>
+                <p className="font-semibold">{company.onboardingProcesses?.find(p=>p.id === activeProcessId)?.name || 'Select a Process'}</p>
                 <Button variant="outline" asChild>
                     <Link href="/dashboard/settings/preview/application" target="_blank">
                     <Eye className="mr-2 h-4 w-4" />
@@ -339,10 +386,29 @@ export default function SettingsPage() {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {/* Phase 1 */}
                     <div className="p-4 border rounded-lg space-y-3">
                          <div className="flex items-center justify-between">
                             <Label htmlFor="prompt-p1" className="font-semibold">Phase 1: Application Form</Label>
+                            <div className="flex items-center gap-2 text-primary animate-pulse">
+                                <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                                <ArrowRight className="h-4 w-4 hidden md:block" />
+                                <AlertDialog open={isPhase1InfoOpen} onOpenChange={setIsPhase1InfoOpen}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 1: Generate an Application Form</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Describe the job or role you're hiring for. The AI will generate a complete application form with relevant fields. Example: "A delivery driver application form that requires a valid license and 2 years of experience."
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <Textarea id="prompt-p1" placeholder="Describe the application form you need..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
                         <Button onClick={handleGenerateFromPrompt} disabled={isGenerating}>
@@ -351,24 +417,62 @@ export default function SettingsPage() {
                         </Button>
                     </div>
 
-                     {/* Phase 2 */}
                     <div className="p-4 border rounded-lg space-y-3 opacity-50">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <Label htmlFor="prompt-p2" className="font-semibold">Phase 2: Interview Screen</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                             </div>
+                            <div className="flex items-center gap-2 text-primary animate-pulse">
+                                <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                                <ArrowRight className="h-4 w-4 hidden md:block" />
+                                <AlertDialog open={isPhase2InfoOpen} onOpenChange={setIsPhase2InfoOpen}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 2: Interview Screen (Coming Soon)</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This feature is currently in development. Soon, you'll be able to describe the key questions and criteria for the interview, and the AI will generate a structured interview review form.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                         <Textarea id="prompt-p2" placeholder="Describe the interview questions or screen..." disabled />
                         <Button disabled>Generate</Button>
                     </div>
 
-                     {/* Phase 3 */}
                     <div className="p-4 border rounded-lg space-y-3 opacity-50">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <Label htmlFor="prompt-p3" className="font-semibold">Phase 3: Required Documentation</Label>
                                 <p className="text-xs text-amber-600 font-semibold">Available soon</p>
+                            </div>
+                             <div className="flex items-center gap-2 text-primary animate-pulse">
+                                <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                                <ArrowRight className="h-4 w-4 hidden md:block" />
+                                <AlertDialog open={isPhase3InfoOpen} onOpenChange={setIsPhase3InfoOpen}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Phase 3: Required Documentation (Coming Soon)</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This feature is currently in development. You will be able to list the documents needed (e.g., "Driver's License, I-9 Form, W-4"), and the AI will create the document request phase.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </div>
                         <Textarea id="prompt-p3" placeholder="List the required documents..." disabled />
@@ -392,7 +496,6 @@ export default function SettingsPage() {
         </fieldset>
       </Card>
 
-      {/* NEW SECTION FOR AI FORMS */}
       <Card>
         <CardHeader>
           <CardTitle>Your IA Forms</CardTitle>
@@ -405,10 +508,25 @@ export default function SettingsPage() {
             {(company.onboardingProcesses || []).filter(p => p.id !== company.onboardingProcesses?.[0]?.id).map(process => (
               <div key={process.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/30">
                 <span className="font-medium">{process.name}</span>
-                <Button variant="outline" size="sm" onClick={() => setIsPreviewDialogOpen(true)}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Preview
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Preview Not Available</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This functionality is coming soon.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogAction>OK</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
             {(company.onboardingProcesses?.length || 0) <= 1 && (
@@ -417,24 +535,7 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Modal for "Coming Soon" */}
-      <AlertDialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Preview Not Available</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      This functionality is coming soon.
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogAction onClick={() => setIsPreviewDialogOpen(false)}>OK</AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
 
     </div>
   );
 }
-
-    
