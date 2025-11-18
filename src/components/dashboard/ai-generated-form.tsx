@@ -56,7 +56,7 @@ const createZodSchema = (fields: AiFormField[]) => {
                  zodField = z.literal(true, {
                     errorMap: () => ({ message: "This field must be checked." }),
                 });
-            } else {
+            } else if (zodField instanceof z.ZodString || zodField instanceof z.ZodNumber) {
                  zodField = zodField.min(1, { message: "This field is required." });
             }
         } else {
