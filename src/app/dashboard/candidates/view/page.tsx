@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { type ApplicationData, type InterviewReviewSchema } from "@/lib/schemas";
-import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX, FileText, ChevronLeft, FileUp, Loader2, AlertCircle } from "lucide-react";
+import { Briefcase, Printer, UserCheck, UserSearch, MessageSquare, UserX, FileText, ChevronLeft, FileUp, Loader2, AlertCircle, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
@@ -18,6 +18,7 @@ import { DocumentationPhase } from "@/components/dashboard/documentation-phase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { detectMissingDocuments, DetectMissingDocumentsInput } from "@/ai/flows/detect-missing-documents";
 import { getCompanies } from "@/app/actions/company-actions";
+import { CopyDocumentationLink } from "@/components/dashboard/copy-documentation-link";
 
 
 function buildCandidateProfile(candidate: ApplicationData | null): string {
@@ -293,7 +294,8 @@ function ApplicationViewContent() {
                     { (isDocumentationPhase || isInterviewSubmitted) && (
                         <div className="space-y-4">
                             <DocumentationPhase candidateId={candidateId} />
-                            <div className="flex justify-end pt-4">
+                            <div className="flex justify-end pt-4 gap-2">
+                                <CopyDocumentationLink candidateId={candidateId} processId={applicationData.applyingFor?.[0]} />
                                 <Button onClick={handleCheckDocsForHire} disabled={applicationData.status !== 'interview' || isCheckingDocs}>
                                     {isCheckingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
                                     Mark as New Hire

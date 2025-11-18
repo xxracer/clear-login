@@ -2,38 +2,26 @@
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from "react";
-import { AlertCircle, FileCheck, Lightbulb, Loader2, Link as LinkIcon } from "lucide-react";
+import { AlertCircle, FileCheck, Lightbulb, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { detectMissingDocuments, DetectMissingDocumentsInput } from "@/ai/flows/detect-missing-documents";
-import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getCandidate } from "@/app/actions/client-actions";
 import { ApplicationData } from "@/lib/schemas";
 import { getCompanies } from "@/app/actions/company-actions";
 import { OnboardingProcess } from "@/lib/company-schemas";
-import { CopyDocumentationLink } from "./copy-documentation-link";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 
 function buildCandidateProfile(candidate: ApplicationData | null): string {
   if (!candidate) return "No candidate data available.";
-  
-  const submittedDocs: string[] = [];
-  if (candidate.resume) submittedDocs.push("Resume/CV");
-  if (candidate.applicationPdfUrl) submittedDocs.push("Application Form");
-  if (candidate.driversLicense) submittedDocs.push("Driver's License");
-  if (candidate.idCard) submittedDocs.push("Proof of Identity / ID Card");
-  if (candidate.proofOfAddress) submittedDocs.push("Proof of Address");
-  if (candidate.i9) submittedDocs.push("I-9 Form");
-  if (candidate.w4) submittedDocs.push("W-4 Form");
-  if (candidate.educationalDiplomas) submittedDocs.push("Educational Diplomas");
-  candidate.documents?.forEach(d => submittedDocs.push(d.title));
 
   return `
     Name: ${candidate.firstName} ${candidate.lastName}
     Position Applying For: ${candidate.position}
-    Applying to: ${candidate.applyingFor.join(", ")}
-    Submitted Documents: ${submittedDocs.join(", ") || 'None'}
+    Applying to: ${candidate.applyingFor.join(", ") || 'N/A'}
   `;
 }
 
@@ -44,7 +32,8 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
   const [candidate, setCandidate] = useState<ApplicationData | null>(null);
   const [activeProcess, setActiveProcess] = useState<OnboardingProcess | null>(null);
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
+
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({});
 
   const loadData = useCallback(async () => {
     if (!candidateId) return;
@@ -58,13 +47,19 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
       
       let foundProcess = currentCompany.onboardingProcesses?.find(p => 
         candidateData?.applyingFor?.includes(p.name)
-      ) || null;
-      
-      if (!foundProcess && currentCompany.onboardingProcesses && currentCompany.onboardingProcesses.length > 0) {
-        foundProcess = currentCompany.onboardingProcesses[0];
-      }
+      ) || currentCompany.onboardingProcesses?.[0] || null;
       
       setActiveProcess(foundProcess);
+
+      // Initialize checkbox state based on existing documents for realism
+      const initialChecks: Record<string, boolean> = {};
+      if (candidateData) {
+        if(candidateData.i9) initialChecks['i9'] = true;
+        if(candidateData.w4) initialChecks['w4'] = true;
+        if(candidateData.idCard) initialChecks['proofOfIdentity'] = true;
+        if(candidateData.educationalDiplomas) initialChecks['educationalDiplomas'] = true;
+      }
+      setCheckedDocs(initialChecks);
     }
   }, [candidateId]);
 
@@ -76,30 +71,23 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
 
 
   const handleDetectMissing = async () => {
-    if (!candidate) {
-      setError("Candidate data is not loaded yet.");
+    if (!candidate || !activeProcess) {
+      setError("Candidate data or process configuration is not loaded yet.");
       return;
     }
     setIsLoading(true);
     setError(null);
     setMissingDocuments(null);
 
-    const submittedDocs: string[] = [];
-    if (candidate.resume) submittedDocs.push("Resume/CV");
-    if (candidate.applicationPdfUrl) submittedDocs.push("Application Form");
-    if (candidate.driversLicense) submittedDocs.push("Driver's License");
-    if (candidate.idCard) submittedDocs.push("Proof of Identity / ID Card");
-    if (candidate.proofOfAddress) submittedDocs.push("Proof of Address");
-    if (candidate.i9) submittedDocs.push("I-9 Form");
-    if (candidate.w4) submittedDocs.push("W-4 Form");
-    if (candidate.educationalDiplomas) submittedDocs.push("Educational Diplomas");
-    candidate.documents?.forEach(d => submittedDocs.push(d.title));
-
+    const submittedDocs = (activeProcess.requiredDocs || [])
+      .filter(doc => checkedDocs[doc.id])
+      .map(doc => doc.label);
+      
     const input: DetectMissingDocumentsInput = {
       candidateProfile: buildCandidateProfile(candidate),
       onboardingPhase: "Detailed Documentation",
       submittedDocuments: submittedDocs,
-      requiredDocuments: activeProcess?.requiredDocs || [],
+      requiredDocuments: activeProcess.requiredDocs || [],
     };
 
     try {
@@ -113,20 +101,47 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
     }
   };
 
+  const handleCheckChange = (docId: string, isChecked: boolean) => {
+    setCheckedDocs(prev => ({
+        ...prev,
+        [docId]: isChecked
+    }));
+  }
+
   if (isPending) {
     return <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
+  const requiredDocs = activeProcess?.requiredDocs || [];
+
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-8">
-         <Card>
+        <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Request Documentation</CardTitle>
-                <CardDescription>Send the candidate a link to a secure portal where they can upload the necessary documents for the final phase.</CardDescription>
+                <CardTitle className="font-headline">Required Documentation Checklist</CardTitle>
+                <CardDescription>
+                    This is a simulation. Check the boxes for documents the candidate has supposedly submitted. The file upload buttons are for visual purposes only.
+                </CardDescription>
             </CardHeader>
-            <CardContent>
-                <CopyDocumentationLink candidateId={candidateId} processId={activeProcess?.id} />
+            <CardContent className="space-y-4">
+                {requiredDocs.length > 0 ? (
+                    requiredDocs.map(doc => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/30">
+                            <div className="flex items-center gap-3">
+                                <Checkbox 
+                                    id={`doc-${doc.id}`} 
+                                    checked={!!checkedDocs[doc.id]}
+                                    onCheckedChange={(checked) => handleCheckChange(doc.id, !!checked)}
+                                />
+                                <Label htmlFor={`doc-${doc.id}`}>{doc.label}</Label>
+                            </div>
+                            <Button variant="outline" size="sm" disabled>Upload Document</Button>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center">No specific documents have been requested for this position.</p>
+                )}
             </CardContent>
         </Card>
 
@@ -199,5 +214,3 @@ export function DocumentationPhase({ candidateId }: { candidateId: string}) {
     </div>
   );
 }
-
-    
