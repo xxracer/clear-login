@@ -421,21 +421,27 @@ export default function EmployeesPage() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
                 <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add Legacy Employee
                 </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle>Add Legacy Employee</DialogTitle>
-                    <CardDescription>Upload an old employee's application PDF. The AI will extract their information.</CardDescription>
-                </DialogHeader>
-                <AddLegacyEmployeeForm onEmployeeAdded={onEmployeeAdded} />
-            </DialogContent>
-        </Dialog>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="sm:max-w-[600px]">
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Add Legacy Employee</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This feature uses AI to automatically extract employee information from old application PDFs, saving you manual data entry time. Simply upload the PDF, and the system will create a digital record for you.
+                        <br/><br/>
+                        <strong className="text-amber-600">This feature is coming soon.</strong>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction>Got it!</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       </div>
       
        <div className="relative">
@@ -487,3 +493,5 @@ export default function EmployeesPage() {
     </div>
   );
 }
+
+    
