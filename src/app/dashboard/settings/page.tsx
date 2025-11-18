@@ -34,6 +34,11 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | undefined>();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
+  // State to determine if the company has been saved, which dictates field disabling
+  const [isCompanySaved, setIsCompanySaved] = useState(false);
+  // State to specifically trigger the confirmation dialog
+  const [showSavedDialog, setShowSavedDialog] = useState(false);
+
   // AI Form Builder state
   const [isAiBuilderOpen, setIsAiBuilderOpen] = useState(false);
   const [aiBuilderMode, setAiBuilderMode] = useState<'wizard' | 'prompt'>('wizard');
@@ -44,19 +49,14 @@ export default function SettingsPage() {
   const [isCompanyDetailsDialogOpen, setCompanyDetailsDialogOpen] = useState(false);
   const [isProcessesDialogOpen, setIsProcessesDialogOpen] = useState(false);
   const [isAiBuilderInfoOpen, setIsAiBuilderInfoOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   
   const [isPhase1InfoOpen, setIsPhase1InfoOpen] = useState(false);
   const [isPhase2InfoOpen, setIsPhase2InfoOpen] = useState(false);
   const [isPhase3InfoOpen, setIsPhase3InfoOpen] = useState(false);
 
-  // New state for company saved dialog
-  const [isCompanySaved, setIsCompanySaved] = useState(false);
-
 
   const showCompanyDetailsHint = !company.name;
   const showProcessesHint = !showCompanyDetailsHint && (!company.onboardingProcesses || company.onboardingProcesses.length === 0);
-  const showAiBuilderHint = !showCompanyDetailsHint && !showProcessesHint;
 
 
   // Load initial company data
@@ -148,6 +148,7 @@ export default function SettingsPage() {
         setCompany(result.company);
         setLogoFile(undefined);
         setIsCompanySaved(true);
+        setShowSavedDialog(true); // Trigger the dialog only after a successful save
 
       } catch (error) {
         toast({ variant: "destructive", title: "Save Failed", description: (error as Error).message });
@@ -345,26 +346,22 @@ export default function SettingsPage() {
                   <Wand2 className="h-5 w-5 text-primary" />
                   <CardTitle className="text-xl">AI-Powered Process Builder</CardTitle>
               </div>
-               {showAiBuilderHint && (
-                  <div className="flex items-center gap-2 text-primary animate-pulse">
-                        <AlertDialog open={isAiBuilderInfoOpen} onOpenChange={setIsAiBuilderInfoOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>About the AI Process Builder</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Use AI to quickly generate new onboarding processes. You can use the guided wizard for a step-by-step approach or write a free-form prompt for more custom needs.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                  </div>
-              )}
+              <AlertDialog open={isAiBuilderInfoOpen} onOpenChange={setIsAiBuilderInfoOpen}>
+                  <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>About the AI Process Builder</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Use AI to quickly generate new onboarding processes. You can use the guided wizard for a step-by-step approach or write a free-form prompt for more custom needs.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
           </CardHeader>
         <fieldset>
         <CardContent className="space-y-6">
@@ -533,7 +530,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={isCompanySaved} onOpenChange={setIsCompanySaved}>
+      <AlertDialog open={showSavedDialog} onOpenChange={setShowSavedDialog}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Settings Saved</AlertDialogTitle>
@@ -542,7 +539,7 @@ export default function SettingsPage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setIsCompanySaved(false)}>OK</AlertDialogAction>
+                <AlertDialogAction onClick={() => setShowSavedDialog(false)}>OK</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -550,7 +547,5 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
 
     
