@@ -50,10 +50,12 @@ export default function SettingsPage() {
   const [isPhase2InfoOpen, setIsPhase2InfoOpen] = useState(false);
   const [isPhase3InfoOpen, setIsPhase3InfoOpen] = useState(false);
 
+  // New state for company saved dialog
+  const [isCompanySaved, setIsCompanySaved] = useState(false);
 
 
   const showCompanyDetailsHint = !company.name;
-  const showProcessesHint = !showCompanyDetailsHint && (!company.onboardingProcesses || company.onboardingProcesses.length <= 1);
+  const showProcessesHint = !showCompanyDetailsHint && (!company.onboardingProcesses || company.onboardingProcesses.length === 0);
   const showAiBuilderHint = !showCompanyDetailsHint && !showProcessesHint;
 
 
@@ -64,16 +66,6 @@ export default function SettingsPage() {
       const companies = await getCompanies();
       const firstCompany = companies[0] || {};
       
-      if (!firstCompany.onboardingProcesses || firstCompany.onboardingProcesses.length === 0) {
-          firstCompany.onboardingProcesses = [{
-              id: generateIdForServer(),
-              name: "Default Process",
-              applicationForm: { id: generateIdForServer(), name: "Default Template Form", type: 'template', images: [], fields: [] },
-              interviewScreen: { type: 'template' },
-              requiredDocs: [],
-          }];
-      }
-
       setCompany(firstCompany);
       if (firstCompany.logo) {
         try {
@@ -148,9 +140,9 @@ export default function SettingsPage() {
         const result = await createOrUpdateCompany(dataToSave);
         if (!result.success || !result.company) throw new Error(result.error || "Failed to save.");
 
-        toast({ title: "Settings Saved", description: "Company details have been updated." });
         setCompany(result.company);
         setLogoFile(undefined);
+        setIsCompanySaved(true);
 
       } catch (error) {
         toast({ variant: "destructive", title: "Save Failed", description: (error as Error).message });
@@ -158,7 +150,7 @@ export default function SettingsPage() {
     });
   };
 
-  const [activeProcessId, setActiveProcessId] = useState<string | null>(company.onboardingProcesses?.[0]?.id || null);
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeProcessId && company.onboardingProcesses && company.onboardingProcesses.length > 0) {
@@ -218,38 +210,40 @@ export default function SettingsPage() {
         <CardContent>
           <div className="border rounded-lg p-4 relative">
             <CardDescription className="mb-6">Manage the company profile and associated onboarding users. Remember to save your changes.</CardDescription>
-            <fieldset className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" placeholder="e.g., Acme Company" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company-address">Address</Label>
-                  <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={company.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <Label htmlFor="company-phone">Phone Number</Label>
-                      <Input id="company-phone" placeholder="(555) 123-4567" value={company.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <fieldset disabled={isCompanySaved}>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input id="company-name" placeholder="e.g., Acme Company" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
                   </div>
-                   <div className="space-y-2">
-                      <Label htmlFor="company-fax">Fax</Label>
-                      <Input id="company-fax" placeholder="(555) 123-4568" value={company.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
+                  <div className="space-y-2">
+                    <Label htmlFor="company-address">Address</Label>
+                    <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={company.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company-email">Company Email</Label>
-                  <Input id="company-email" type="email" placeholder="contact@acme.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="company-logo">Company Logo</Label>
-                    <div className="flex items-center gap-4">
-                        <Input id="company-logo" type="file" className="max-w-xs" onChange={(e) => { if (e.target.files) setLogoFile(e.target.files[0])}} accept="image/*" />
-                        {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="company-phone">Phone Number</Label>
+                        <Input id="company-phone" placeholder="(555) 123-4567" value={company.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="company-fax">Fax</Label>
+                        <Input id="company-fax" placeholder="(555) 123-4568" value={company.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company-email">Company Email</Label>
+                    <Input id="company-email" type="email" placeholder="contact@acme.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="company-logo">Company Logo</Label>
+                      <div className="flex items-center gap-4">
+                          <Input id="company-logo" type="file" className="max-w-xs" onChange={(e) => { if (e.target.files) setLogoFile(e.target.files[0])}} accept="image/*" />
+                          {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                      </div>
+                  </div>
                 </div>
-              </div>
+              </fieldset>
               <div className="space-y-4 rounded-md border p-4 bg-muted/30">
                 <h3 className="font-semibold text-foreground">Onboarding Users</h3>
                 <div className="space-y-2">
@@ -266,9 +260,9 @@ export default function SettingsPage() {
                 </div>
                 <Button className="w-full" disabled><PlusCircle className="mr-2 h-4 w-4" /> Add User</Button>
               </div>
-            </fieldset>
+            </div>
             <div className="mt-6">
-              <Button size="lg" disabled={isPending} onClick={handleSave}>
+              <Button size="lg" disabled={isPending || isCompanySaved} onClick={handleSave}>
                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Company & Continue
               </Button>
@@ -284,7 +278,7 @@ export default function SettingsPage() {
                     <Library className="h-5 w-5" />
                     <CardTitle className="text-xl">Onboarding Processes</CardTitle>
                 </div>
-                <div className="flex items-center gap-2 text-primary animate-pulse">
+                 <div className="flex items-center gap-2 text-primary animate-pulse">
                     <p className="text-sm font-medium hidden md:block">Click here first!</p>
                     <ArrowRight className="h-4 w-4 hidden md:block" />
                     <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
@@ -534,8 +528,20 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      <AlertDialog open={isCompanySaved} onOpenChange={setIsCompanySaved}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Settings Saved</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Company details have been updated and are now locked. You can still manage onboarding users.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setIsCompanySaved(false)}>OK</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
-
-    
