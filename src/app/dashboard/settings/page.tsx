@@ -222,7 +222,7 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" placeholder="e.g., Noble Health" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+                  <Input id="company-name" placeholder="e.g., Acme Company" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-address">Address</Label>
@@ -240,7 +240,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-email">Company Email</Label>
-                  <Input id="company-email" type="email" placeholder="contact@noblehealth.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
+                  <Input id="company-email" type="email" placeholder="contact@acme.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="company-logo">Company Logo</Label>
@@ -284,28 +284,26 @@ export default function SettingsPage() {
                     <Library className="h-5 w-5" />
                     <CardTitle className="text-xl">Onboarding Processes</CardTitle>
                 </div>
-                 {showProcessesHint && (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                        <p className="text-sm font-medium hidden md:block">Click here first!</p>
-                        <ArrowRight className="h-4 w-4 hidden md:block" />
-                        <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                )}
+                <div className="flex items-center gap-2 text-primary animate-pulse">
+                    <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                    <ArrowRight className="h-4 w-4 hidden md:block" />
+                    <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
             </div>
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
@@ -329,10 +327,10 @@ export default function SettingsPage() {
           <div className="md:col-span-2 border rounded-lg p-4 space-y-6">
              <div className="flex items-center justify-between">
                 <p className="font-semibold">{company.onboardingProcesses?.find(p=>p.id === activeProcessId)?.name || 'Select a Process'}</p>
-                <Button variant="outline" asChild>
+                 <Button asChild variant="outline">
                     <Link href="/dashboard/settings/preview/application" target="_blank">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview Form
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview Form
                     </Link>
                 </Button>
              </div>
