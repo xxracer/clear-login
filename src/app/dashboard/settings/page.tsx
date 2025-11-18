@@ -61,7 +61,23 @@ export default function SettingsPage() {
   const loadInitialData = async () => {
       setIsLoading(true);
       const companies = await getCompanies();
-      const firstCompany = companies[0] || {};
+      const firstCompany = companies[0] || {
+        // Set default onboarding process for new companies
+        onboardingProcesses: [
+          {
+            id: 'default',
+            name: 'Default Process',
+            applicationForm: { id: 'default_form', name: 'Default Application', type: 'template' },
+            interviewScreen: { type: 'template' },
+            requiredDocs: [
+              { id: 'i9', label: 'Form I-9 (Employment Eligibility)', type: 'upload' },
+              { id: 'w4', label: 'Form W-4 (Tax Withholding)', type: 'upload' },
+              { id: 'proofOfIdentity', label: 'Proof of Identity & Social Security', type: 'upload' },
+              { id: 'educationalDiplomas', label: 'Educational Diplomas or Certificates', type: 'upload' },
+            ]
+          }
+        ]
+      };
       
       setCompany(firstCompany);
 
@@ -386,7 +402,6 @@ export default function SettingsPage() {
                   </AlertDialogContent>
               </AlertDialog>
           </CardHeader>
-        <fieldset>
         <CardContent className="space-y-6">
              <RadioGroup value={aiBuilderMode} onValueChange={(v) => setAiBuilderMode(v as 'wizard' | 'prompt')} className="flex items-center gap-4">
                 <div className="flex items-center space-x-2"><RadioGroupItem value="wizard" id="wizard" /><Label htmlFor="wizard">Guided Wizard</Label></div>
@@ -510,7 +525,6 @@ export default function SettingsPage() {
                 }}
              />
         </CardContent>
-        </fieldset>
       </Card>
 
       <Card>
@@ -592,3 +606,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

@@ -221,3 +221,5 @@ export const ExtractEmployeeDataOutputSchema = z.object({
   emergencyContact: z.string().describe("The employee's emergency contact (name and phone number)."),
 });
 export type ExtractEmployeeDataOutput = z.infer<typeof ExtractEmployeeDataOutputSchema>;
+
+    
