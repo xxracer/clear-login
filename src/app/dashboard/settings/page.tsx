@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
-import { getCompanies, createOrUpdateCompany, addOnboardingProcess } from "@/app/actions/company-actions";
+import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess } from "@/app/actions/company-actions";
 import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
 import { getFile, uploadKvFile, deleteFile } from "@/app/actions/kv-actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -170,6 +171,22 @@ export default function SettingsPage() {
       setActiveProcessId(company.onboardingProcesses[0].id);
     }
   }, [company.onboardingProcesses, activeProcessId]);
+
+    const handleDeleteProcess = (processId: string) => {
+        if (!company.id) return;
+        startTransition(async () => {
+            const result = await deleteOnboardingProcess(company.id!, processId);
+            if (result.success && result.company) {
+                setCompany(result.company);
+                toast({
+                    title: "Process Deleted",
+                    description: `The onboarding process has been removed.`,
+                });
+            } else {
+                toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+            }
+        });
+    };
 
   if (isLoading) {
     return (
@@ -508,25 +525,47 @@ export default function SettingsPage() {
             {(company.onboardingProcesses || []).filter(p => p.applicationForm?.type === 'custom').map(process => (
               <div key={process.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/30">
                 <span className="font-medium">{process.name}</span>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Eye className="mr-2 h-4 w-4" />
-                      Preview
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Preview Not Available</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This functionality is coming soon.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogAction>OK</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex items-center gap-2">
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Preview Not Available</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This functionality is coming soon.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogAction>OK</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the "{process.name}" onboarding process.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteProcess(process.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
               </div>
             ))}
             {(company.onboardingProcesses?.filter(p => p.applicationForm?.type === 'custom').length || 0) === 0 && (

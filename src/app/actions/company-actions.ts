@@ -82,6 +82,38 @@ export async function addOnboardingProcess(companyId: string, process: Onboardin
     }
 }
 
+export async function deleteOnboardingProcess(companyId: string, processId: string) {
+    try {
+        const companies = await getCompanies();
+        const companyIndex = companies.findIndex(c => c.id === companyId);
+
+        if (companyIndex === -1) {
+            throw new Error("Company not found.");
+        }
+
+        const company = companies[companyIndex];
+        const initialProcessCount = company.onboardingProcesses?.length || 0;
+
+        if (company.onboardingProcesses) {
+            company.onboardingProcesses = company.onboardingProcesses.filter(p => p.id !== processId);
+        }
+
+        if (company.onboardingProcesses?.length === initialProcessCount) {
+             return { success: false, error: "Process not found to delete." };
+        }
+        
+        companies[companyIndex] = company;
+        await kv.set(COMPANIES_KEY, companies);
+
+        revalidatePath('/dashboard/settings');
+        
+        return { success: true, company: company };
+    } catch (error) {
+        console.error("Error deleting onboarding process:", error);
+        return { success: false, error: `Failed to delete process: ${(error as Error).message}` };
+    }
+}
+
 
 export async function deleteCompany(id: string) {
     try {
