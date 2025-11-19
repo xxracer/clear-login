@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [isPhase1InfoOpen, setIsPhase1InfoOpen] = useState(false);
   const [isPhase2InfoOpen, setIsPhase2InfoOpen] = useState(false);
   const [isPhase3InfoOpen, setIsPhase3InfoOpen] = useState(false);
+  const [isComingSoonOpen, setComingSoonOpen] = useState(false);
 
 
   const showCompanyDetailsHint = !company.name;
@@ -349,50 +350,87 @@ export default function SettingsPage() {
             <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 space-y-2">
-            <h3 className="font-semibold px-2">Application Forms</h3>
-            <div className="flex flex-col gap-1">
-                {(company.onboardingProcesses || []).map(p => (
-                     <div key={p.id} className={cn("flex items-center justify-between p-2 rounded-md", activeProcessId === p.id && "bg-muted")}>
-                        <button
-                        className="flex-1 text-left"
-                        onClick={() => setActiveProcessId(p.id)}
-                        >
-                        <span className="font-medium">{p.name}</span>
-                        </button>
+            {/* Application Forms Column */}
+            <div className="space-y-4 p-4 border rounded-lg">
+                <h3 className="font-semibold text-lg">Application Forms</h3>
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Process 1</span>
+                        <Button variant="outline" size="sm">
+                            <Eye className="mr-2 h-4 w-4" />Preview
+                        </Button>
                     </div>
-                ))}
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted opacity-50">
+                        <span className="font-medium">Default Process 2</span>
+                        <span className="text-xs font-semibold text-amber-600">Coming Soon</span>
+                    </div>
+                     <div className="flex items-center justify-between p-2 rounded-md bg-muted opacity-50">
+                        <span className="font-medium">Default Process 3</span>
+                        <span className="text-xs font-semibold text-amber-600">Coming Soon</span>
+                    </div>
+                </div>
+                 <div className="mt-4 pt-4 border-t">
+                    <Button className="w-full" onClick={() => setComingSoonOpen(true)}>
+                        <Upload className="mr-2 h-4 w-4" /> Create from File
+                    </Button>
+                </div>
             </div>
-          </div>
 
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 border rounded-lg p-4">
-             <div className="space-y-2">
-                <h3 className="font-semibold">Interview Process</h3>
-                 <div className="p-4 border rounded-md space-y-3">
-                    <p className="font-medium">Default Interview</p>
-                    <p className="text-sm text-muted-foreground">Standard interview questions and review form.</p>
-                     <Button asChild variant="outline" size="sm">
-                        <Link href="/dashboard/settings/preview/interview" target="_blank">
-                            <Eye className="mr-2 h-4 w-4" />
-                            Preview
-                        </Link>
+            {/* Interview Process Column */}
+            <div className="space-y-4 p-4 border rounded-lg relative">
+                <div className="absolute inset-0 bg-background/50 z-10 opacity-75"></div>
+                 <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">Interview Process</h3>
+                    <span className="font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full text-xs">Available Soon</span>
+                </div>
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Interview 1</span>
+                        <Button variant="outline" size="sm" disabled>
+                            <Eye className="mr-2 h-4 w-4" />Preview
+                        </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Interview 2</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Interview 3</span>
+                    </div>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                    <Button className="w-full" disabled>
+                        <Upload className="mr-2 h-4 w-4" /> Create from File
                     </Button>
                 </div>
-             </div>
-             <div className="space-y-2">
-                <h3 className="font-semibold">Documentation Process</h3>
-                 <div className="p-4 border rounded-md space-y-3">
-                    <p className="font-medium">Default Documentation</p>
-                    <p className="text-sm text-muted-foreground">Standard set of required documents (I-9, W-4, etc.).</p>
-                     <Button asChild variant="outline" size="sm">
-                        <Link href="/dashboard/settings/preview/documentation" target="_blank">
-                            <Eye className="mr-2 h-4 w-4" />
-                            Preview
-                        </Link>
+            </div>
+
+            {/* Documentation Process Column */}
+            <div className="space-y-4 p-4 border rounded-lg relative">
+                <div className="absolute inset-0 bg-background/50 z-10 opacity-75"></div>
+                <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">Documentation Process</h3>
+                    <span className="font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full text-xs">Available Soon</span>
+                </div>
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Documentation 1</span>
+                         <Button variant="outline" size="sm" disabled>
+                            <Eye className="mr-2 h-4 w-4" />Preview
+                        </Button>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Documentation 2</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="font-medium">Default Documentation 3</span>
+                    </div>
+                </div>
+                 <div className="mt-4 pt-4 border-t">
+                    <Button className="w-full" disabled>
+                        <Upload className="mr-2 h-4 w-4" /> Create from File
                     </Button>
                 </div>
-             </div>
-          </div>
+            </div>
         </CardContent>
       </Card>
 
@@ -617,6 +655,20 @@ export default function SettingsPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogAction onClick={() => setShowSavedDialog(false)}>OK</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog open={isComingSoonOpen} onOpenChange={setComingSoonOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Coming Soon!</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This feature will allow you to upload an existing form (PDF or image) and our AI will automatically convert it into a digital application.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setComingSoonOpen(false)}>Got it!</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
