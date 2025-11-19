@@ -45,20 +45,42 @@ export default function DashboardPage() {
   if (!company) {
     return (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm h-full">
-            <Card className="w-full max-w-lg text-center">
+            <Card className="w-full max-w-2xl text-left">
                 <CardHeader>
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <Settings className="h-8 w-8 text-muted-foreground" />
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted shrink-0">
+                            <Settings className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <CardTitle className="font-headline text-2xl mt-1">Welcome to ClearComplyHR!</CardTitle>
+                            <CardDescription className="mt-1">
+                                Your all-in-one solution for effortless onboarding and applicant/employee management.
+                            </CardDescription>
+                        </div>
                     </div>
-                    <CardTitle className="font-headline text-2xl mt-4">Welcome to Onboard Panel!</CardTitle>
-                    <CardDescription>
-                       To get started, you need to set up your company profile. This will customize the application portal for your candidates.
-                    </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Button asChild>
-                        <Link href="/dashboard/settings">Go to Settings</Link>
-                    </Button>
+                <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                        We’re excited to help you streamline your HR process, stay compliant, and eliminate manual paperwork — all from one secure dashboard.
+                    </p>
+                    <div className="text-sm p-4 border bg-muted/50 rounded-lg space-y-2">
+                        <p className="font-semibold">Here’s what you can do inside ClearComplyHR:</p>
+                        <ul className="list-none space-y-2 text-muted-foreground">
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Automated Onboarding (No Logins Needed)</strong> – Send, track, and manage employee forms digitally and effortlessly — no logins required for staff or applicants.</li>
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Compliance Monitoring</strong> – Stay audit-ready with automatic OIG, license, and exclusion checks.</li>
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Document Management</strong> – Securely store and organize all employee files in one place.</li>
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Background & Training Tracking</strong> – Stay ahead of expiring credentials, in-services, and renewals.</li>
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Admin Dashboard</strong> – Get a real-time view of employee status, compliance gaps, and pending tasks.</li>
+                            <li><span className="text-green-500 mr-2">✅</span><strong>Custom Branding</strong> – Personalize your candidate portal with your company’s name and logo.</li>
+                        </ul>
+                    </div>
+                     <div className="text-center pt-4">
+                        <p className="font-semibold mb-2">Next Step:</p>
+                        <p className="text-sm text-muted-foreground mb-4">Let’s set up your company profile to personalize your onboarding experience and activate your ClearComplyHR dashboard.</p>
+                        <Button asChild>
+                            <Link href="/dashboard/settings">Go to Settings</Link>
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         </div>
