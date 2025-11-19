@@ -399,20 +399,19 @@ export default function SettingsPage() {
                                    </div>
                                </div>
 
-                               <div className="p-4 border rounded-lg space-y-3 opacity-50">
+                               <div className="p-4 border rounded-lg space-y-3">
                                    <div className="flex items-center justify-between">
                                        <div>
                                            <Label className="font-semibold">Phase 2: Interview Screen</Label>
-                                           <p className="text-xs text-amber-600 font-semibold">Available soon</p>
                                        </div>
                                    </div>
-                                   <p className="text-sm text-muted-foreground">Customize the form used during the interview review process.</p>
+                                   <p className="text-sm text-muted-foreground">Using the "Default Interview" template. Create a custom screen from a file or preview the default.</p>
                                    <div className="flex gap-2">
-                                        <Button variant="secondary" size="sm" disabled>
+                                        <Button variant="secondary" size="sm" onClick={() => setComingSoonOpen(true)}>
                                           <Upload className="mr-2 h-4 w-4" /> Create from File
                                        </Button>
-                                       <Button variant="outline" size="sm" disabled>
-                                           <Eye className="mr-2 h-4 w-4" />Preview
+                                       <Button variant="outline" size="sm" asChild>
+                                          <Link href="/dashboard/settings/preview/interview" target="_blank"><Eye className="mr-2 h-4 w-4" />Preview</Link>
                                        </Button>
                                    </div>
                                </div>
