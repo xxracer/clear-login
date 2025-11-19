@@ -318,120 +318,132 @@ export default function SettingsPage() {
       </Card>
       
       <Card>
-        <CardHeader>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Library className="h-5 w-5" />
-                    <CardTitle className="text-xl">Onboarding Processes</CardTitle>
-                </div>
-                 {showProcessesHint && (
-                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                        <p className="text-sm font-medium hidden md:block">Click here first!</p>
-                        <ArrowRight className="h-4 w-4 hidden md:block" />
-                        <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This section shows your company's onboarding processes. The "Default Process" is always available. Use the AI Builder below to create new, customized processes for different roles.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogAction onClick={() => {}}>Got it!</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                 )}
-            </div>
-            <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Application Forms Column */}
-            <div className="space-y-4 p-4 border rounded-lg">
-                <h3 className="font-semibold text-lg">Application Forms</h3>
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Process 1</span>
-                        <Button variant="outline" size="sm">
-                            <Eye className="mr-2 h-4 w-4" />Preview
-                        </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted opacity-50">
-                        <span className="font-medium">Default Process 2</span>
-                        <span className="text-xs font-semibold text-amber-600">Coming Soon</span>
-                    </div>
-                     <div className="flex items-center justify-between p-2 rounded-md bg-muted opacity-50">
-                        <span className="font-medium">Default Process 3</span>
-                        <span className="text-xs font-semibold text-amber-600">Coming Soon</span>
-                    </div>
-                </div>
-                 <div className="mt-4 pt-4 border-t">
-                    <Button className="w-full" onClick={() => setComingSoonOpen(true)}>
-                        <Upload className="mr-2 h-4 w-4" /> Create from File
-                    </Button>
-                </div>
-            </div>
+          <CardHeader>
+              <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <Library className="h-5 w-5" />
+                      <CardTitle className="text-xl">Onboarding Processes</CardTitle>
+                  </div>
+                  {showProcessesHint && (
+                      <div className="flex items-center gap-2 text-primary animate-pulse">
+                          <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                          <ArrowRight className="h-4 w-4 hidden md:block" />
+                          <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This section allows you to manage your company's onboarding processes. Select a process from the "Available Forms" list on the left to view or edit its details on the right.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogAction onClick={() => { }}>Got it!</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                      </div>
+                  )}
+              </div>
+              <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Left Column: Process List */}
+                  <div className="md:col-span-1 border rounded-lg p-4 space-y-2">
+                      <h3 className="font-semibold text-lg px-2">Available Forms</h3>
+                      <div className="space-y-1">
+                          <button 
+                            className={cn(
+                                "w-full text-left p-2 rounded-md font-medium",
+                                activeProcessId === 'default' ? "bg-muted" : "hover:bg-muted/50"
+                            )}
+                            onClick={() => setActiveProcessId('default')}
+                          >
+                              Default Process
+                          </button>
+                          <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
+                              <span>Custom Form 2</span>
+                              <span className="text-xs">(Available soon)</span>
+                          </div>
+                          <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
+                              <span>Custom Form 3</span>
+                               <span className="text-xs">(Available soon)</span>
+                          </div>
+                           <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
+                              <span>Custom Form 4</span>
+                               <span className="text-xs">(Available soon)</span>
+                          </div>
+                      </div>
+                  </div>
+                  {/* Right Column: Process Details */}
+                  <div className="md:col-span-2 border rounded-lg p-4 min-h-[250px]">
+                      {activeProcessId ? (
+                           <div className="space-y-6">
+                               <h3 className="text-lg font-semibold">Editing: {company.onboardingProcesses?.find(p=>p.id === activeProcessId)?.name}</h3>
+                               
+                               <div className="p-4 border rounded-lg space-y-3">
+                                   <div className="flex items-center justify-between">
+                                       <Label className="font-semibold">Phase 1: Application Form</Label>
+                                   </div>
+                                    <p className="text-sm text-muted-foreground">Using the "Default Application" template. To use a custom form, create one with the AI Builder below.</p>
+                                   <div className="flex gap-2">
+                                       <Button variant="secondary" size="sm" onClick={() => setComingSoonOpen(true)}>
+                                          <Upload className="mr-2 h-4 w-4" /> Create from File
+                                       </Button>
+                                       <Button variant="outline" size="sm" asChild>
+                                            <Link href="/dashboard/settings/preview/application" target="_blank"><Eye className="mr-2 h-4 w-4" />Preview</Link>
+                                       </Button>
+                                   </div>
+                               </div>
 
-            {/* Interview Process Column */}
-            <div className="space-y-4 p-4 border rounded-lg relative">
-                <div className="absolute inset-0 bg-background/50 z-10 opacity-75"></div>
-                 <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">Interview Process</h3>
-                    <span className="font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full text-xs">Available Soon</span>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Interview 1</span>
-                        <Button variant="outline" size="sm" disabled>
-                            <Eye className="mr-2 h-4 w-4" />Preview
-                        </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Interview 2</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Interview 3</span>
-                    </div>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                    <Button className="w-full" disabled>
-                        <Upload className="mr-2 h-4 w-4" /> Create from File
-                    </Button>
-                </div>
-            </div>
+                               <div className="p-4 border rounded-lg space-y-3 opacity-50">
+                                   <div className="flex items-center justify-between">
+                                       <div>
+                                           <Label className="font-semibold">Phase 2: Interview Screen</Label>
+                                           <p className="text-xs text-amber-600 font-semibold">Available soon</p>
+                                       </div>
+                                   </div>
+                                   <p className="text-sm text-muted-foreground">Customize the form used during the interview review process.</p>
+                                   <div className="flex gap-2">
+                                        <Button variant="secondary" size="sm" disabled>
+                                          <Upload className="mr-2 h-4 w-4" /> Create from File
+                                       </Button>
+                                       <Button variant="outline" size="sm" disabled>
+                                           <Eye className="mr-2 h-4 w-4" />Preview
+                                       </Button>
+                                   </div>
+                               </div>
 
-            {/* Documentation Process Column */}
-            <div className="space-y-4 p-4 border rounded-lg relative">
-                <div className="absolute inset-0 bg-background/50 z-10 opacity-75"></div>
-                <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">Documentation Process</h3>
-                    <span className="font-medium text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full text-xs">Available Soon</span>
-                </div>
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Documentation 1</span>
-                         <Button variant="outline" size="sm" disabled>
-                            <Eye className="mr-2 h-4 w-4" />Preview
-                        </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Documentation 2</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="font-medium">Default Documentation 3</span>
-                    </div>
-                </div>
-                 <div className="mt-4 pt-4 border-t">
-                    <Button className="w-full" disabled>
-                        <Upload className="mr-2 h-4 w-4" /> Create from File
-                    </Button>
-                </div>
-            </div>
-        </CardContent>
+                               <div className="p-4 border rounded-lg space-y-3 opacity-50">
+                                   <div className="flex items-center justify-between">
+                                       <div>
+                                           <Label className="font-semibold">Phase 3: Required Documentation</Label>
+                                           <p className="text-xs text-amber-600 font-semibold">Available soon</p>
+                                       </div>
+                                   </div>
+                                    <p className="text-sm text-muted-foreground">Define which documents candidates must provide after the interview.</p>
+                                    <div className="flex gap-2">
+                                        <Button variant="secondary" size="sm" disabled>
+                                          <Edit className="mr-2 h-4 w-4" /> Edit Documents
+                                       </Button>
+                                       <Button variant="outline" size="sm" disabled>
+                                           <Eye className="mr-2 h-4 w-4" />Preview
+                                       </Button>
+                                   </div>
+                               </div>
+
+                           </div>
+                      ) : (
+                          <div className="flex items-center justify-center h-full text-muted-foreground">
+                              Select a form from the library to edit.
+                          </div>
+                      )}
+                  </div>
+              </div>
+          </CardContent>
       </Card>
 
 
