@@ -315,7 +315,7 @@ export default function SettingsPage() {
       
       <Card>
         <CardHeader className="flex flex-row items-start justify-between">
-            <div className="space-y-1.5">
+            <div>
                 <div className="flex items-center gap-2">
                     <Library className="h-5 w-5" />
                     <CardTitle className="text-xl">Onboarding Processes</CardTitle>
@@ -683,3 +683,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
