@@ -314,42 +314,40 @@ export default function SettingsPage() {
       </Card>
       
       <Card>
-          <CardHeader>
-              <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                      <Library className="h-5 w-5" />
-                      <CardTitle className="text-xl">Onboarding Processes</CardTitle>
-                  </div>
-                  {showProcessesHint && (
-                      <div className="flex items-center gap-2 text-primary animate-pulse">
-                          <p className="text-sm font-medium hidden md:block">Click here first!</p>
-                          <ArrowRight className="h-4 w-4 hidden md:block" />
-                          <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
-                              <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This section allows you to manage your company's onboarding processes. Select a process from the "Available Forms" list on the left to view or edit its details on the right.
-                                      </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogAction onClick={() => { }}>Got it!</AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                          </AlertDialog>
-                      </div>
-                  )}
+          <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                  <Library className="h-5 w-5" />
+                  <CardTitle className="text-xl">Onboarding Processes</CardTitle>
               </div>
-              <CardDescription>Manage your saved application forms and onboarding processes.</CardDescription>
+              {showProcessesHint && (
+                  <div className="flex items-center gap-2 text-primary animate-pulse">
+                      <p className="text-sm font-medium hidden md:block">Click here first!</p>
+                      <ArrowRight className="h-4 w-4 hidden md:block" />
+                      <AlertDialog open={isProcessesDialogOpen} onOpenChange={setIsProcessesDialogOpen}>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7"><Info className="h-5 w-5 text-muted-foreground" /></Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Manage Onboarding Processes</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      This section allows you to manage your company's onboarding processes. Select a process from the list on the left to view or edit its details on the right.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogAction onClick={() => { }}>Got it!</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  </div>
+              )}
           </CardHeader>
-          <CardContent>
+          <CardDescription className="px-6">Manage your saved application forms and onboarding processes.</CardDescription>
+          <CardContent className="pt-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Left Column: Process List */}
                   <div className="md:col-span-1 border rounded-lg p-4 space-y-2">
-                      <h3 className="font-semibold text-lg px-2">Available Forms</h3>
+                      <h3 className="font-semibold text-lg px-2">{activePhase === 'application' ? 'Available Forms' : 'Available Interview Screens'}</h3>
                       <div className="space-y-1">
                           <button 
                             className={cn(
@@ -358,18 +356,18 @@ export default function SettingsPage() {
                             )}
                             onClick={() => setActiveProcessId('default')}
                           >
-                              Custom Form 1
+                              {activePhase === 'application' ? 'Custom Form 1' : 'Default Interview 1'}
                           </button>
                           <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
-                              <span>Custom Form 2</span>
+                              <span>{activePhase === 'application' ? 'Custom Form 2' : 'Default Interview 2'}</span>
                               <span className="text-xs">(Available soon)</span>
                           </div>
                           <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
-                              <span>Custom Form 3</span>
+                              <span>{activePhase === 'application' ? 'Custom Form 3' : 'Default Interview 3'}</span>
                                <span className="text-xs">(Available soon)</span>
                           </div>
                            <div className="p-2 text-muted-foreground opacity-50 flex justify-between items-center">
-                              <span>Custom Form 4</span>
+                              <span>{activePhase === 'application' ? 'Custom Form 4' : 'Default Interview 4'}</span>
                                <span className="text-xs">(Available soon)</span>
                           </div>
                       </div>
