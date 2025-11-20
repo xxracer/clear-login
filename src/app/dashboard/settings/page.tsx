@@ -386,7 +386,7 @@ export default function SettingsPage() {
                                           <Upload className="mr-2 h-4 w-4" /> Create from File
                                        </Button>
                                       <Button variant="secondary" size="sm" onClick={() => setIsAiCreateInfoOpen(true)}>
-                                          <Upload className="mr-2 h-4 w-4" /> Create Whit IA
+                                          <Wand2 className="mr-2 h-4 w-4" /> Create With AI
                                        </Button>
                                        <Button variant="outline" size="sm" asChild>
                                             <Link href="/dashboard/settings/preview/application" target="_blank"><Eye className="mr-2 h-4 w-4" />Preview</Link>
@@ -684,7 +684,7 @@ export default function SettingsPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>AI Form Creation</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Esto te ayudará a crear tu propio formulario con la IA.
+                    This will help you create your own form with AI.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -696,3 +696,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
