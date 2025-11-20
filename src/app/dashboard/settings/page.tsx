@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess } from "@/app/actions/company-actions";
 import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
 import { getFile, uploadKvFile, deleteFile } from "@/app/actions/kv-actions";
@@ -17,7 +18,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateIdForServer } from "@/lib/server-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import Link from "next/link";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -171,6 +171,8 @@ export default function SettingsPage() {
     // Set a default active process ID if none is set and processes exist
     if (!activeProcessId && company.onboardingProcesses && company.onboardingProcesses.length > 0) {
       setActiveProcessId(company.onboardingProcesses[0].id);
+    } else if (!activeProcessId) {
+      setActiveProcessId('default')
     }
   }, [company.onboardingProcesses, activeProcessId]);
 
@@ -680,17 +682,20 @@ export default function SettingsPage() {
       </AlertDialog>
       
       <AlertDialog open={isAiCreateInfoOpen} onOpenChange={setIsAiCreateInfoOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>AI Form Creation</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This will help you create your own form with AI.
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mx-auto mb-4">
+                    <Wand2 className="h-6 w-6 text-primary" />
+                </div>
+                <AlertDialogTitle className="text-center">AI Form Creation</AlertDialogTitle>
+                <AlertDialogDescription className="text-center">
+                    Leverage AI to generate a custom application form. Simply describe the role or requirements, and the AI will build a structured form for you.
                 </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setIsAiCreateInfoOpen(false)}>Got it!</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => setIsAiCreateInfoOpen(false)}>Got it!</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
       </AlertDialog>
 
     </div>
