@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Company, OnboardingProcess } from "@/lib/company-schemas";
@@ -46,6 +47,8 @@ import { AiFormField, ApplicationForm } from "@/lib/company-schemas";
 import { generateIdForServer } from "@/lib/server-utils";
 import Image from "next/image";
 import { getFile } from "@/app/actions/kv-actions";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 
 type ActiveProcessPhase = 'application' | 'interview' | 'documentation';
@@ -338,7 +341,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-start justify-between">
+        <CardHeader className="flex flex-row items-start justify-between">
           <div>
             <CardTitle>Onboarding Processes</CardTitle>
             <CardDescription>
