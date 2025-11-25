@@ -1,0 +1,312 @@
+{
+  "entities": {
+    "Candidate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Candidate",
+      "type": "object",
+      "description": "Represents a candidate in the onboarding process.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Candidate entity."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Candidate's last name."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "Candidate's first name."
+        },
+        "middleName": {
+          "type": "string",
+          "description": "Candidate's middle name."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Candidate's date of birth.",
+          "format": "date-time"
+        },
+        "streetAddress": {
+          "type": "string",
+          "description": "Candidate's street address."
+        },
+        "city": {
+          "type": "string",
+          "description": "Candidate's city."
+        },
+        "state": {
+          "type": "string",
+          "description": "Candidate's state."
+        },
+        "zipCode": {
+          "type": "string",
+          "description": "Candidate's zip code."
+        },
+        "homePhone": {
+          "type": "string",
+          "description": "Candidate's home phone number."
+        },
+        "businessPhone": {
+          "type": "string",
+          "description": "Candidate's business phone number."
+        },
+        "emergencyContactName": {
+          "type": "string",
+          "description": "Name of the candidate's emergency contact."
+        },
+        "hasPreviousEmployment": {
+          "type": "boolean",
+          "description": "Indicates if the candidate has previously applied for employment with the agency."
+        },
+        "hoursAvailablePerWeek": {
+          "type": "number",
+          "description": "Number of hours per week the candidate is available for work."
+        },
+        "isLegallyEligible": {
+          "type": "boolean",
+          "description": "Indicates if the candidate is legally eligible for employment in the United States."
+        },
+        "howLearnedAboutUs": {
+          "type": "string",
+          "description": "How the candidate learned about the organization (e.g., Online Ad, Agency employee, Other)."
+        },
+        "willingToWorkEveningsWeekends": {
+          "type": "boolean",
+          "description": "Indicates if the candidate is willing to work evenings and/or weekends."
+        },
+        "positionApplyingFor": {
+          "type": "string",
+          "description": "The position the candidate is applying for."
+        }
+      },
+      "required": [
+        "id",
+        "lastName",
+        "firstName",
+        "dateOfBirth",
+        "streetAddress",
+        "city",
+        "state",
+        "zipCode",
+        "emergencyContactName",
+        "hasPreviousEmployment",
+        "hoursAvailablePerWeek",
+        "isLegallyEligible",
+        "howLearnedAboutUs",
+        "willingToWorkEveningsWeekends",
+        "positionApplyingFor"
+      ]
+    },
+    "OnboardingPhase": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OnboardingPhase",
+      "type": "object",
+      "description": "Represents a phase in the onboarding process.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OnboardingPhase entity."
+        },
+        "candidateId": {
+          "type": "string",
+          "description": "Reference to Candidate. (Relationship: Candidate 1:N OnboardingPhase)"
+        },
+        "phaseName": {
+          "type": "string",
+          "description": "Name of the onboarding phase (e.g., Application, Detailed Documentation)."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the phase.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the phase. Null if the phase is not completed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the phase (e.g., In Progress, Completed)."
+        }
+      },
+      "required": [
+        "id",
+        "candidateId",
+        "phaseName",
+        "startDate",
+        "status"
+      ]
+    },
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
+      "type": "object",
+      "description": "Represents a document associated with a candidate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Document entity."
+        },
+        "candidateId": {
+          "type": "string",
+          "description": "Reference to Candidate. (Relationship: Candidate 1:N Document)"
+        },
+        "documentName": {
+          "type": "string",
+          "description": "Name of the document."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date when the document was uploaded.",
+          "format": "date-time"
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Type of document (e.g., Resume, ID)."
+        },
+        "fileLocation": {
+          "type": "string",
+          "description": "Location of the document in storage (e.g., Google Drive path)."
+        }
+      },
+      "required": [
+        "id",
+        "candidateId",
+        "documentName",
+        "uploadDate",
+        "documentType",
+        "fileLocation"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification for HR personnel.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Notification entity."
+        },
+        "candidateId": {
+          "type": "string",
+          "description": "Reference to Candidate. (Relationship: Candidate 1:N Notification)"
+        },
+        "notificationType": {
+          "type": "string",
+          "description": "Type of notification (e.g., Document Submission, Interview Scheduled)."
+        },
+        "notificationDate": {
+          "type": "string",
+          "description": "Date when the notification was generated.",
+          "format": "date-time"
+        },
+        "message": {
+          "type": "string",
+          "description": "Message content of the notification."
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates if the notification has been read by HR."
+        }
+      },
+      "required": [
+        "id",
+        "candidateId",
+        "notificationType",
+        "notificationDate",
+        "message",
+        "isRead"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/candidates/{candidateId}",
+        "definition": {
+          "entityName": "Candidate",
+          "schema": {
+            "$ref": "#/backend/entities/Candidate"
+          },
+          "description": "Stores candidate data. Each document represents a candidate in the onboarding process.",
+          "params": [
+            {
+              "name": "candidateId",
+              "description": "The unique identifier for the candidate."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/candidates/{candidateId}/onboardingPhases/{onboardingPhaseId}",
+        "definition": {
+          "entityName": "OnboardingPhase",
+          "schema": {
+            "$ref": "#/backend/entities/OnboardingPhase"
+          },
+          "description": "Stores onboarding phases for a specific candidate. This is a subcollection of the candidate document.",
+          "params": [
+            {
+              "name": "candidateId",
+              "description": "The unique identifier for the candidate."
+            },
+            {
+              "name": "onboardingPhaseId",
+              "description": "The unique identifier for the onboarding phase."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/candidates/{candidateId}/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores documents associated with a specific candidate. This is a subcollection of the candidate document.",
+          "params": [
+            {
+              "name": "candidateId",
+              "description": "The unique identifier for the candidate."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for the document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/candidates/{candidateId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores notifications related to a specific candidate. This is a subcollection of the candidate document.",
+          "params": [
+            {
+              "name": "candidateId",
+              "description": "The unique identifier for the candidate."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the Onboard panel application. Candidates, onboarding phases, documents, and notifications are stored in separate collections with a path-based ownership model for candidates. This approach ensures that each collection has a homogeneous security posture, simplifying security rules and enhancing debuggability.\n\n**Candidates Collection:** The `/candidates/{candidateId}` collection stores candidate data. \n\n**Onboarding Phases, Documents and Notifications:** The OnboardingPhase, Document, and Notification are stored as subcollections of the Candidate document: `/candidates/{candidateId}/onboardingPhases/{onboardingPhaseId}`, `/candidates/{candidateId}/documents/{documentId}`, and `/candidates/{candidateId}/notifications/{notificationId}` respectively. This enforces a clear ownership model where only HR personnel can manage and view these subcollections. Since the application explicitly states HR personnel will be reviewing the candidates documents and notifications, it is reasonable to assume that they would be the only users reading and writing data, meaning that a role-based system is not necessary.\n\n**Authorization Independence (CRITICAL):** Authorization independence is achieved by eliminating the need for `get()` calls in security rules. Since the application requirements do not specify different access levels for different users, there is no need to denormalize any authorization context.  Security rules can directly check `request.auth.uid` against the intended operations on the data.\n\n**QAPs (Rules are not Filters):** This structure supports secure `list` operations by ensuring that each collection is secured based on HR personnel access (TBD by the application). Segregation of data into separate collections based on entity type ensures that rules are not used as filters, as each collection has a clearly defined security posture. Given that the user is authenticated, they can list all data."
+  }
+}

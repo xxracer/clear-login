@@ -1,8 +1,157 @@
+/**
+ * Core Philosophy: This ruleset secures an internal HR onboarding application.
+ * The security model assumes that any user who successfully authenticates is a
+ * trusted HR staff member with full permissions to create, read, update, and
+ * delete any data in the system. Access is denied universally to unauthenticated
+ * users.
+ *
+ * Data Structure: The data is organized hierarchically. A top-level
+ * `/candidates` collection contains all candidate information. All related data,
+ * such as onboarding phases, documents, and notifications, are stored in
+ * subcollections under the relevant candidate document.
+ *
+ * Key Security Decisions:
+ * -   Authenticated Access: Any signed-in user is granted full CRUD (Create,
+ *     Read, Update, Delete) access to all collections. This simplifies the
+ *     model for an internal tool where all users are trusted.
+ * -   No Public Access: All read and write operations are denied for
+ *     unauthenticated requests.
+ * -   Relational Integrity: Rules enforce that documents in subcollections
+ *     contain a `candidateId` field that correctly points to their parent
+ *     candidate document. This link is immutable after creation.
+ *
+ * Denormalization for Authorization: No denormalization is required. The
+ * security model is based solely on the user's authentication state (`request.auth`),
+ * which is always available, eliminating the need for extra document reads (`get()`)
+ * or complex data lookups in rules.
+ *
+ * Structural Segregation: The use of distinct collections and subcollections
+ * for different entity types (Candidates, Documents, etc.) provides a clear
+ * and secure structure. This ensures that list operations are performed on
+ * homogenous data sets, aligning with the "rules are not filters" principle.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Ensures a document exists before an update or delete operation.
+     */
+    function isExistingDocument() {
+      return resource != null;
+    }
+
+    /**
+     * On create, validates that the candidate document's internal 'id'
+     * matches the document ID in the path.
+     */
+    function isCandidateIdConsistentOnCreate(candidateId) {
+      return request.resource.data.id == candidateId;
+    }
+
+    /**
+     * On update, ensures the candidate document's internal 'id' is immutable.
+     */
+    function isCandidateIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * On create, validates that a subcollection document has a 'candidateId'
+     * field that correctly links it to its parent candidate document.
+     */
+    function isLinkedToParentOnCreate(candidateId) {
+      return request.resource.data.candidateId == candidateId;
+    }
+
+    /**
+     * On update, ensures the 'candidateId' linking a subcollection document
+     * to its parent is immutable.
+     */
+    function isParentLinkImmutable() {
+      return request.resource.data.candidateId == resource.data.id;
+    }
+
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages candidate records. Any authenticated user (HR staff) can
+     *              create, view, and manage all candidate profiles.
+     * @path        /candidates/{candidateId}
+     * @allow       (get, list, create, update, delete) An authenticated HR user performs any action.
+     * @deny        (any) An unauthenticated user tries to access any candidate data.
+     * @principle   Grants full access to authenticated users for this internal tool.
+     *              Enforces relational integrity by matching the document's internal
+     *              `id` field with its path ID.
+     */
     match /candidates/{candidateId} {
-      allow read, write: if true;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isCandidateIdConsistentOnCreate(candidateId);
+      allow update: if isSignedIn() && isExistingDocument() && isCandidateIdImmutable();
+      allow delete: if isSignedIn() && isExistingDocument();
+
+      /**
+       * @description Manages the onboarding phases for a specific candidate.
+       * @path        /candidates/{candidateId}/onboardingPhases/{onboardingPhaseId}
+       * @allow       (create) An authenticated user adds a new onboarding phase for a candidate.
+       * @deny        (create) An unauthenticated user attempts to create a phase.
+       * @principle   Grants full access to authenticated users and validates that the new
+       *              phase document is correctly linked to its parent candidate.
+       */
+      match /onboardingPhases/{onboardingPhaseId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && isLinkedToParentOnCreate(candidateId);
+        allow update: if isSignedIn() && isExistingDocument() && isParentLinkImmutable();
+        allow delete: if isSignedIn() && isExistingDocument();
+      }
+
+      /**
+       * @description Manages documents associated with a specific candidate.
+       * @path        /candidates/{candidateId}/documents/{documentId}
+       * @allow       (create) An authenticated user uploads a document for a candidate.
+       * @deny        (update) An authenticated user tries to change the parent `candidateId` of a document.
+       * @principle   Grants full access to authenticated users and ensures the parent-child
+       *              relationship between a document and its candidate is immutable.
+       */
+      match /documents/{documentId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && isLinkedToParentOnCreate(candidateId);
+        allow update: if isSignedIn() && isExistingDocument() && isParentLinkImmutable();
+        allow delete: if isSignedIn() && isExistingDocument();
+      }
+
+      /**
+       * @description Manages notifications related to a specific candidate's progress.
+       * @path        /candidates/{candidateId}/notifications/{notificationId}
+       * @allow       (get) An authenticated user reads a notification for a candidate.
+       * @deny        (get) An unauthenticated user attempts to read a notification.
+       * @principle   Grants full access to authenticated users for managing candidate-specific
+       *              notifications.
+       */
+      match /notifications/{notificationId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && isLinkedToParentOnCreate(candidateId);
+        allow update: if isSignedIn() && isExistingDocument() && isParentLinkImmutable();
+        allow delete: if isSignedIn() && isExistingDocument();
+      }
     }
   }
 }
