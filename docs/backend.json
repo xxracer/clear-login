@@ -1,5 +1,41 @@
+
 {
   "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique identifier for the user, matching the Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "The ID of the company the user belongs to."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within their company.",
+          "enum": [
+            "admin",
+            "employee"
+          ]
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "companyId",
+        "role"
+      ]
+    },
     "Candidate": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Candidate",
@@ -231,19 +267,23 @@
   "firestore": {
     "structure": [
       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile data, including their company affiliation and role."
+        }
+      },
+      {
         "path": "/candidates/{candidateId}",
         "definition": {
           "entityName": "Candidate",
           "schema": {
             "$ref": "#/backend/entities/Candidate"
           },
-          "description": "Stores candidate data. Each document represents a candidate in the onboarding process.",
-          "params": [
-            {
-              "name": "candidateId",
-              "description": "The unique identifier for the candidate."
-            }
-          ]
+          "description": "Stores candidate data. Each document represents a candidate in the onboarding process."
         }
       },
       {
@@ -253,17 +293,7 @@
           "schema": {
             "$ref": "#/backend/entities/OnboardingPhase"
           },
-          "description": "Stores onboarding phases for a specific candidate. This is a subcollection of the candidate document.",
-          "params": [
-            {
-              "name": "candidateId",
-              "description": "The unique identifier for the candidate."
-            },
-            {
-              "name": "onboardingPhaseId",
-              "description": "The unique identifier for the onboarding phase."
-            }
-          ]
+          "description": "Stores onboarding phases for a specific candidate. This is a subcollection of the candidate document."
         }
       },
       {
@@ -273,17 +303,7 @@
           "schema": {
             "$ref": "#/backend/entities/Document"
           },
-          "description": "Stores documents associated with a specific candidate. This is a subcollection of the candidate document.",
-          "params": [
-            {
-              "name": "candidateId",
-              "description": "The unique identifier for the candidate."
-            },
-            {
-              "name": "documentId",
-              "description": "The unique identifier for the document."
-            }
-          ]
+          "description": "Stores documents associated with a specific candidate. This is a subcollection of the candidate document."
         }
       },
       {
@@ -293,20 +313,10 @@
           "schema": {
             "$ref": "#/backend/entities/Notification"
           },
-          "description": "Stores notifications related to a specific candidate. This is a subcollection of the candidate document.",
-          "params": [
-            {
-              "name": "candidateId",
-              "description": "The unique identifier for the candidate."
-            },
-            {
-              "name": "notificationId",
-              "description": "The unique identifier for the notification."
-            }
-          ]
+          "description": "Stores notifications related to a specific candidate. This is a subcollection of the candidate document."
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the Onboard panel application. Candidates, onboarding phases, documents, and notifications are stored in separate collections with a path-based ownership model for candidates. This approach ensures that each collection has a homogeneous security posture, simplifying security rules and enhancing debuggability.\n\n**Candidates Collection:** The `/candidates/{candidateId}` collection stores candidate data. \n\n**Onboarding Phases, Documents and Notifications:** The OnboardingPhase, Document, and Notification are stored as subcollections of the Candidate document: `/candidates/{candidateId}/onboardingPhases/{onboardingPhaseId}`, `/candidates/{candidateId}/documents/{documentId}`, and `/candidates/{candidateId}/notifications/{notificationId}` respectively. This enforces a clear ownership model where only HR personnel can manage and view these subcollections. Since the application explicitly states HR personnel will be reviewing the candidates documents and notifications, it is reasonable to assume that they would be the only users reading and writing data, meaning that a role-based system is not necessary.\n\n**Authorization Independence (CRITICAL):** Authorization independence is achieved by eliminating the need for `get()` calls in security rules. Since the application requirements do not specify different access levels for different users, there is no need to denormalize any authorization context.  Security rules can directly check `request.auth.uid` against the intended operations on the data.\n\n**QAPs (Rules are not Filters):** This structure supports secure `list` operations by ensuring that each collection is secured based on HR personnel access (TBD by the application). Segregation of data into separate collections based on entity type ensures that rules are not used as filters, as each collection has a clearly defined security posture. Given that the user is authenticated, they can list all data."
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the Onboard panel application. A new 'users' collection is added to manage application users, their roles, and company affiliations, which is essential for the requested multi-tenancy model. Candidates, onboarding phases, documents, and notifications are stored in separate collections with a path-based ownership model for candidates. This approach ensures that each collection has a homogeneous security posture, simplifying security rules and enhancing debuggability.\n\n**Users Collection:** The `/users/{userId}` collection stores a document for each user, linking their Firebase Auth UID to their company and role.\n\n**Candidates Collection:** The `/candidates/{candidateId}` collection stores candidate data. \n\n**Onboarding Phases, Documents and Notifications:** The OnboardingPhase, Document, and Notification are stored as subcollections of the Candidate document: `/candidates/{candidateId}/onboardingPhases/{onboardingPhaseId}`, `/candidates/{candidateId}/documents/{documentId}`, and `/candidates/{candidateId}/notifications/{notificationId}` respectively. This enforces a clear ownership model. Access will be determined by the authenticated user's company ID.\n\n**Authorization Independence (CRITICAL):** Authorization independence is achieved by eliminating the need for `get()` calls in security rules. Security rules can directly check `request.auth.uid` and associated custom claims (like companyId) against the intended operations on the data.\n\n**QAPs (Rules are not Filters):** This structure supports secure `list` operations by ensuring that each collection is secured based on user roles and company affiliation. Segregation of data into separate collections based on entity type ensures that rules are not used as filters, as each collection has a clearly defined security posture."
   }
 }

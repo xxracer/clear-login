@@ -9,30 +9,56 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
+import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
   const [email, setEmail] = useState("admin@acme.com");
   const [password, setPassword] = useState("password123");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (email && password) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome back!",
-      });
-      router.push("/dashboard");
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "Please enter a valid email and password.",
-      });
+    if (!email || !password) {
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Please enter a valid email and password.",
+        });
+        return;
     }
+
+    setIsLoading(true);
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+        });
+        router.push("/dashboard");
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        let description = "An unknown error occurred.";
+        if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
+            description = "Invalid email or password. Please try again.";
+        } else if (errorCode === 'auth/invalid-email') {
+            description = "Please enter a valid email address.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: description,
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   return (
@@ -53,7 +79,7 @@ export function LoginForm() {
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>This is a demo. You can use the pre-filled credentials to log in.</p>
+                      <p>Use your registered company email to log in.</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -79,8 +105,8 @@ export function LoginForm() {
               </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Access Dashboard
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Access Dashboard"}
             </Button>
           </CardFooter>
       </form>
