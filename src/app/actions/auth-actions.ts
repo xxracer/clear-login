@@ -1,6 +1,5 @@
 'use server';
 
-import { initializeFirebase } from '@/firebase';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initFirebaseAdmin } from '@/firebase/admin-config';
@@ -12,9 +11,17 @@ import { initFirebaseAdmin } from '@/firebase/admin-config';
  * @param email The new user's email.
  * @param password The new user's initial password.
  * @param companyId The ID of the company this user will administrate.
+ * @param subscriptionStartDate The start date of the company's subscription.
+ * @param subscriptionEndDate The end date of the company's subscription.
  * @returns An object indicating success or failure.
  */
-export async function createAdminUser(email: string, password: string, companyId: string) {
+export async function createAdminUser(
+  email: string, 
+  password: string, 
+  companyId: string,
+  subscriptionStartDate?: Date,
+  subscriptionEndDate?: Date
+) {
   try {
     const adminApp = await initFirebaseAdmin();
     const adminAuth = getAuth(adminApp);
@@ -33,6 +40,8 @@ export async function createAdminUser(email: string, password: string, companyId
       email: email,
       companyId: companyId,
       role: 'admin', // Assign the 'admin' role
+      subscriptionStartDate: subscriptionStartDate?.toISOString() || null,
+      subscriptionEndDate: subscriptionEndDate?.toISOString() || null,
     });
 
     return { success: true, uid: userRecord.uid };
@@ -44,4 +53,29 @@ export async function createAdminUser(email: string, password: string, companyId
       : error.message || 'An unexpected error occurred.';
     return { success: false, error: message };
   }
+}
+
+
+/**
+ * Deletes a user from Firebase Authentication and their profile from Firestore.
+ * @param uid The UID of the user to delete.
+ * @returns An object indicating success or failure.
+ */
+export async function deleteUser(uid: string) {
+    try {
+        const adminApp = await initFirebaseAdmin();
+        const adminAuth = getAuth(adminApp);
+        const adminFirestore = getFirestore(adminApp);
+
+        // Delete user from Firebase Auth
+        await adminAuth.deleteUser(uid);
+
+        // Delete user profile from Firestore
+        await adminFirestore.collection('users').doc(uid).delete();
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error deleting user:', error);
+        return { success: false, error: error.message || 'An unexpected error occurred.' };
+    }
 }
