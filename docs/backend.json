@@ -27,6 +27,16 @@
             "admin",
             "employee"
           ]
+        },
+        "subscriptionStartDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The start date of the company's subscription."
+        },
+        "subscriptionEndDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The end date of the company's subscription."
         }
       },
       "required": [
@@ -186,7 +196,7 @@
           "description": "Unique identifier for the Document entity."
         },
         "candidateId": {
-          "type": "string",
+          "type": a"string",
           "description": "Reference to Candidate. (Relationship: Candidate 1:N Document)"
         },
         "documentName": {
