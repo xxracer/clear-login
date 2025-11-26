@@ -1,21 +1,23 @@
 
 'use server';
 
-import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, writeBatch } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, writeBatch } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { Company, OnboardingProcess } from "@/lib/company-schemas";
 import { generateIdForServer } from "@/lib/server-utils";
 import { revalidatePath } from 'next/cache';
-import { initializeFirebase } from "@/firebase";
+import { initFirebaseAdmin } from "@/firebase/admin-config";
+import { getFirestore } from "firebase-admin/firestore";
 
 // This file now acts as a server-side API for interacting with Firestore.
 
 const COMPANIES_COLLECTION = 'companies';
 
 async function getFirebaseServices() {
-    const { firestore: fs, firebaseApp } = initializeFirebase();
-    const storage = getStorage(firebaseApp);
-    return { firestore: fs, storage };
+    const adminApp = await initFirebaseAdmin();
+    const firestore = getFirestore(adminApp);
+    const storage = getStorage(adminApp);
+    return { firestore, storage };
 }
 
 export async function getCompanies(): Promise<Company[]> {
@@ -178,20 +180,35 @@ export async function deleteAllCompanies() {
 export async function uploadCompanyLogo(file: File): Promise<string> {
   const { storage } = await getFirebaseServices();
   const filePath = `logos/${Date.now()}-${file.name}`;
-  const storageRef = ref(storage, filePath);
-  await uploadBytes(storageRef, file);
-  const downloadURL = await getDownloadURL(storageRef);
-  return downloadURL;
+  const bucket = storage.bucket('onboard-panel-gx822.appspot.com');
+  const blob = bucket.file(filePath);
+
+  const fileBuffer = await file.arrayBuffer();
+  
+  await blob.save(Buffer.from(fileBuffer), {
+    metadata: {
+      contentType: file.type,
+    },
+  });
+
+  await blob.makePublic();
+
+  return blob.publicUrl();
 }
 
 export async function deleteCompanyLogo(downloadURL: string) {
     if (!downloadURL) return;
     const { storage } = await getFirebaseServices();
     try {
-        const fileRef = ref(storage, downloadURL);
-        await deleteObject(fileRef);
+        const bucket = storage.bucket('onboard-panel-gx822.appspot.com');
+        const fileName = new URL(downloadURL).pathname.split('/').pop();
+        if (fileName) {
+            await bucket.file(`logos/${fileName}`).delete();
+        }
     } catch (error) {
-        console.error("Error deleting old logo from storage:", error);
-        // Don't throw, as the main operation shouldn't fail if old logo deletion fails
+        // Log errors but don't fail the main operation
+        if ((error as any).code !== 404) {
+             console.error("Error deleting old logo from storage:", error);
+        }
     }
 }
