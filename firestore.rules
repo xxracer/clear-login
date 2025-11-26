@@ -9,26 +9,21 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Allow authenticated users to read and write their own data.
-    // This is a basic rule, you should secure this further based on your app's logic.
-    match /{userId}/{documents=**} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
     // Rules for the 'companies' collection
+    // This allows any authenticated admin user to manage company settings.
     match /companies/{companyId} {
-      // Any authenticated user (an admin) can read the company list.
-      allow list, read: if isSignedIn();
-      // Only authenticated users can create/update/delete.
-      // You should lock this down further, e.g., only superadmins can create/delete.
-      allow write: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
-    // Rules for the 'candidates' collection
-    match /candidates/{candidateId} {
-        // Any authenticated user (HR Staff) can read/write candidate data.
-        // This allows the dashboard to function.
-        allow read, write: if isSignedIn();
+    // Rules for the 'candidates' collection and their subcollections
+    // This allows any authenticated admin user to manage all candidate data.
+    match /candidates/{candidateId}/{documents=**} {
+      allow read, write: if isSignedIn();
+    }
+    
+    // Fallback rule for user-specific data, if any.
+    match /users/{userId}/{documents=**} {
+      allow read, write: if request.auth.uid == userId;
     }
   }
 }
