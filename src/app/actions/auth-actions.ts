@@ -1,6 +1,6 @@
 'use server';
 
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, UserRecord } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initFirebaseAdmin } from '@/firebase/admin-config';
 
@@ -95,6 +95,26 @@ export async function setSuperUserClaim(uid: string) {
         return { success: true };
     } catch (error: any) {
         console.error('Error setting superuser claim:', error);
+        return { success: false, error: error.message || 'An unexpected error occurred.' };
+    }
+}
+
+/**
+ * Lists all users from Firebase Authentication.
+ * Intended for superuser dashboard.
+ * @returns An object with the list of users or an error.
+ */
+export async function listAuthUsers(): Promise<{ success: boolean; users?: UserRecord[]; error?: string; }> {
+    try {
+        const adminApp = await initFirebaseAdmin();
+        const adminAuth = getAuth(adminApp);
+        
+        const userRecords = await adminAuth.listUsers();
+        // The users object within ListUsersResult is the array we want.
+        return { success: true, users: userRecords.users };
+
+    } catch (error: any) {
+        console.error('Error listing auth users:', error);
         return { success: false, error: error.message || 'An unexpected error occurred.' };
     }
 }
