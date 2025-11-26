@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -9,24 +8,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // --- Reglas para Colecciones Principales ---
+    // --- Reglas para Colecciones ---
 
-    // La colección 'companies' puede ser leída y escrita por cualquier administrador autenticado.
+    // Permite a los administradores autenticados leer y escribir en la colección de compañías.
     match /companies/{companyId} {
       allow read, write: if isSignedIn();
     }
 
-    // La colección 'candidates' y todos sus documentos y subcolecciones anidadas
-    // pueden ser leídos y escritos por cualquier administrador autenticado.
-    // Esto es crucial para el funcionamiento del dashboard.
+    // Permite a los administradores autenticados gestionar todos los datos de los candidatos.
     match /candidates/{candidateId}/{documents=**} {
       allow read, write: if isSignedIn();
-    }
-    
-    // Regla de respaldo para datos específicos del usuario, si se añade en el futuro.
-    // Permite a un usuario modificar solo su propio documento en la colección 'users'.
-    match /users/{userId}/{documents=**} {
-      allow read, write: if request.auth.uid == userId;
     }
   }
 }

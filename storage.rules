@@ -1,11 +1,9 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite que cualquiera suba archivos (ej. un candidato subiendo su CV).
-    // Las lecturas, sin embargo, están restringidas.
-    // Esto protege los documentos para que solo los administradores autenticados puedan verlos.
+    // Permite que cualquiera suba archivos (ej. un candidato subiendo su CV o licencia).
+    // Las lecturas, sin embargo, están restringidas a usuarios autenticados para proteger la privacidad.
     match /{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if true;
