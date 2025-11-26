@@ -29,7 +29,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useCallback, useTransition } from "react";
-import { checkForExpiringDocuments } from "@/app/actions/client-actions";
 import { cn } from "@/lib/utils";
 
 export function DashboardSidebar() {
@@ -39,8 +38,8 @@ export function DashboardSidebar() {
   const [isPending, startTransition] = useTransition();
 
   const checkDocAlert = useCallback(async () => {
-    const hasExpiring = await checkForExpiringDocuments();
-    setShowDocAlert(hasExpiring);
+    // TODO: Re-implement this with Firestore data
+    setShowDocAlert(false);
   }, []);
 
   const handleCandidateUpdate = useCallback((event: Event) => {
