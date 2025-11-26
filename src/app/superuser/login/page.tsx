@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -11,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/firebase";
+import { signInWithEmailAndPassword, signInAnonymously } from "firebase/auth";
 
 export default function SuperUserLoginPage() {
     const router = useRouter();
@@ -20,25 +20,59 @@ export default function SuperUserLoginPage() {
     const [password, setPassword] = useState("millionares2025");
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // TEMPORARY: Simple password check to allow initial access to create the superuser.
-        // This bypasses Firebase Auth for this one-time entry.
+        // TEMPORARY BYPASS: This allows the superuser to log in once to create their own account.
+        // This should be changed to a real auth check afterwards.
         if (email === "Maijel@ipltecnologies.com" && password === "millionares2025") {
-             toast({
-                title: "Super User Access Granted",
-                description: "Redirecting to dashboard...",
-            });
-            router.push("/superuser/dashboard");
+             try {
+                // Sign in anonymously to get an auth session to view the user list
+                await signInAnonymously(auth);
+                toast({
+                    title: "Temporary Access Granted",
+                    description: "Redirecting to dashboard to create your account...",
+                });
+                router.push("/superuser/dashboard");
+            } catch (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Anonymous Login Failed",
+                    description: (error as Error).message,
+                });
+                setIsLoading(false);
+            }
         } else {
-            toast({
-                variant: "destructive",
-                title: "Access Denied",
-                description: "Invalid credentials for Super User access.",
-            });
-            setIsLoading(false);
+            // After the bypass, we attempt a real login
+             try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const idTokenResult = await userCredential.user.getIdTokenResult();
+
+                if (idTokenResult.claims.superuser) {
+                     toast({
+                        title: "Super User Access Granted",
+                        description: "Redirecting to dashboard...",
+                    });
+                    router.push("/superuser/dashboard");
+                } else {
+                     toast({
+                        variant: "destructive",
+                        title: "Access Denied",
+                        description: "You are not authorized as a super user.",
+                    });
+                     await auth.signOut();
+                }
+
+            } catch (error) {
+                 toast({
+                    variant: "destructive",
+                    title: "Login Failed",
+                    description: (error as Error).message,
+                });
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 

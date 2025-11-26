@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -7,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcw, LogOut, ShieldCheck, Loader2, UserPlus, Users, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCcw, LogOut, ShieldCheck, Loader2, UserPlus, Users, Trash2, Calendar as CalendarIcon, Star } from "lucide-react";
 import { deleteAllCompanies } from "@/app/actions/company-actions";
 import { resetDemoData } from "@/app/actions/client-actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createAdminUser, deleteUser } from "@/app/actions/auth-actions";
+import { createAdminUser, deleteUser, setSuperUserClaim } from "@/app/actions/auth-actions";
 import { getFirestore, collection, onSnapshot, QuerySnapshot, DocumentData } from "firebase/firestore";
-import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useFirestore, errorEmitter, FirestorePermissionError, useAuth } from "@/firebase";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -134,6 +133,7 @@ function UserList() {
     const [loading, setLoading] = useState(true);
     const firestore = useFirestore();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [isClaiming, setIsClaiming] = useState<string | null>(null);
 
     useEffect(() => {
         if (!firestore) return;
@@ -165,6 +165,17 @@ function UserList() {
         }
         setIsDeleting(null);
     }
+    
+    const handleSetSuperuser = async (uid: string) => {
+        setIsClaiming(uid);
+        const result = await setSuperUserClaim(uid);
+        if (result.success) {
+            toast({ title: "Superuser Set", description: "User has been granted superuser privileges. Please log out and log back in." });
+        } else {
+            toast({ variant: "destructive", title: "Failed to Set Claim", description: result.error });
+        }
+        setIsClaiming(null);
+    }
 
     if (loading) {
         return <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin" /></div>
@@ -192,23 +203,28 @@ function UserList() {
                                         {user.subscriptionEndDate ? format(new Date(user.subscriptionEndDate), 'P') : 'N/A'}
                                     </p>
                                 </div>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" size="icon" disabled={isDeleting === user.uid}>
-                                            {isDeleting === user.uid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>This will permanently delete the user <span className="font-bold">{user.email}</span>. This action cannot be undone.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteUser(user.uid)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <div className="flex gap-2">
+                                     <Button variant="outline" size="sm" onClick={() => handleSetSuperuser(user.uid)} disabled={isClaiming === user.uid}>
+                                        {isClaiming === user.uid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon" disabled={isDeleting === user.uid}>
+                                                {isDeleting === user.uid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>This will permanently delete the user <span className="font-bold">{user.email}</span>. This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteUser(user.uid)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -222,6 +238,7 @@ function UserList() {
 export default function SuperUserDashboardPage() {
     const [isResetting, startResetTransition] = useTransition();
     const router = useRouter();
+    const auth = useAuth();
     const { toast } = useToast();
     // This state is to force a re-render of UserList when a user is created
     const [userListVersion, setUserListVersion] = useState(0);
@@ -242,7 +259,8 @@ export default function SuperUserDashboardPage() {
         });
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await auth.signOut();
         router.push('/superuser/login');
     };
     

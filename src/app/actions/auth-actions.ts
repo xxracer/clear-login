@@ -79,3 +79,22 @@ export async function deleteUser(uid: string) {
         return { success: false, error: error.message || 'An unexpected error occurred.' };
     }
 }
+
+/**
+ * Sets a custom claim on a Firebase user to mark them as a superuser.
+ * @param uid The UID of the user to grant superuser privileges.
+ * @returns An object indicating success or failure.
+ */
+export async function setSuperUserClaim(uid: string) {
+    try {
+        const adminApp = await initFirebaseAdmin();
+        const adminAuth = getAuth(adminApp);
+        
+        await adminAuth.setCustomUserClaims(uid, { superuser: true });
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error setting superuser claim:', error);
+        return { success: false, error: error.message || 'An unexpected error occurred.' };
+    }
+}
