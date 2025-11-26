@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -670,7 +671,7 @@ export default function SettingsPage() {
                 <AlertDialogTitle>Coming Soon!</AlertDialogTitle>
                 <AlertDialogDescription>
                     This feature will allow you to upload an existing form (PDF or image) and our AI will automatically convert it into a digital application.
-                </documentos>
+                </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogAction onClick={() => setComingSoonOpen(false)}>Got it!</AlertDialogAction>
@@ -698,5 +699,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
