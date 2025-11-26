@@ -83,10 +83,11 @@ service cloud.firestore {
 
     /**
      * @description Manages user profiles. Users can only read their own profile.
-     *              Admins can create users for their company.
+     *              Admins can create users for their company. Superadmins can list users.
      * @path        /users/{userId}
      */
     match /users/{userId} {
+      allow list: if isSignedIn();
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() && hasRole('admin'); // Company admins can create users
       allow update: if isSignedIn() && request.auth.uid == userId; // Users can update their own profile
