@@ -23,6 +23,7 @@ export function LoginForm() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Intentando iniciar sesión con:", email);
     if (!email || !password) {
         toast({
             variant: "destructive",
@@ -36,6 +37,7 @@ export function LoginForm() {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed in 
+        console.log("Inicio de sesión exitoso para:", userCredential.user.email);
         toast({
           title: "Login Successful",
           description: "Welcome back!",
@@ -44,11 +46,15 @@ export function LoginForm() {
       })
       .catch((error) => {
         const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error("Error de inicio de sesión:", { code: errorCode, message: errorMessage });
         let description = "An unknown error occurred.";
         if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password' || errorCode === 'auth/invalid-credential') {
             description = "Invalid email or password. Please try again.";
         } else if (errorCode === 'auth/invalid-email') {
             description = "Please enter a valid email address.";
+        } else if (errorCode === 'auth/invalid-api-key') {
+             description = "Invalid API Key. Check Firebase client configuration.";
         }
         toast({
           variant: "destructive",

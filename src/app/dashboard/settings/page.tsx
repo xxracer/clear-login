@@ -26,10 +26,17 @@ import { cn } from "@/lib/utils";
 
 // Main component for the settings page
 export default function SettingsPage() {
+  console.log("Renderizando la página de Settings. No se deben cargar datos de la compañía aquí.");
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false); // Used for local loading like AI generation
   const [company, setCompany] = useState<Partial<Company>>({
+    name: '',
+    address: '',
+    phone: '',
+    fax: '',
+    email: '',
+    logo: null,
     onboardingProcesses: []
   });
   const [logoFile, setLogoFile] = useState<File | undefined>();

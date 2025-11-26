@@ -10,6 +10,7 @@ async function getFirebaseAdminApp(): Promise<App> {
   const adminApp = apps.find(app => app.name === FIREBASE_ADMIN_APP_NAME);
 
   if (adminApp) {
+    console.log('Firebase Admin SDK ya estaba inicializado.');
     return adminApp;
   }
 
@@ -18,6 +19,7 @@ async function getFirebaseAdminApp(): Promise<App> {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 
   if (!serviceAccountJson) {
+    console.error("La variable de entorno FIREBASE_SERVICE_ACCOUNT no está configurada.");
     throw new Error(
       "FIREBASE_SERVICE_ACCOUNT environment variable is not set. " +
       "The Admin SDK requires this credential to function. Please ensure the .env file is correctly set up with the service account key."
@@ -30,7 +32,9 @@ async function getFirebaseAdminApp(): Promise<App> {
       credential: credential.cert(serviceAccount),
     };
     
-    return initializeApp(appOptions, FIREBASE_ADMIN_APP_NAME);
+    const newAdminApp = initializeApp(appOptions, FIREBASE_ADMIN_APP_NAME);
+    console.log('Firebase Admin SDK inicializado correctamente.');
+    return newAdminApp;
 
   } catch (error: any) {
     console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT or initialize admin app:", error);

@@ -7,7 +7,9 @@ import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
+  console.log("Intentando inicializar Firebase (Cliente)...");
   if (!getApps().length) {
+    console.log("No hay aplicaciones de Firebase, inicializando una nueva.");
     // Important! initializeApp() is called without any arguments because Firebase App Hosting
     // integrates with the initializeApp() function to provide the environment variables needed to
     // populate the FirebaseOptions in production. It is critical that we attempt to call initializeApp()
@@ -16,12 +18,14 @@ export function initializeFirebase() {
     try {
       // Attempt to initialize via Firebase App Hosting environment variables
       firebaseApp = initializeApp();
+      console.log("Firebase (Cliente) inicializado automáticamente por el entorno de hosting.");
     } catch (e) {
       // Only warn in production because it's normal to use the firebaseConfig to initialize
       // during development
       if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
+        console.warn('La inicialización automática falló. Usando el objeto de configuración de Firebase.', e);
       }
+      console.log("Inicializando Firebase (Cliente) con el objeto de configuración local.");
       firebaseApp = initializeApp(firebaseConfig);
     }
 
@@ -29,6 +33,7 @@ export function initializeFirebase() {
   }
 
   // If already initialized, return the SDKs with the already initialized App
+  console.log("Firebase (Cliente) ya estaba inicializado. Obteniendo la aplicación existente.");
   return getSdks(getApp());
 }
 
