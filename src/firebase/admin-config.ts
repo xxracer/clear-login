@@ -20,7 +20,7 @@ async function getFirebaseAdminApp(): Promise<App> {
   if (!serviceAccountJson) {
     throw new Error(
       "FIREBASE_SERVICE_ACCOUNT environment variable is not set. " +
-      "The Admin SDK requires this credential to function."
+      "The Admin SDK requires this credential to function. Please ensure the .env file is correctly set up with the service account key."
     );
   }
 
