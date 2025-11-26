@@ -10,7 +10,6 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { getFile } from "../actions/kv-actions";
 import { AiGeneratedForm } from "@/components/dashboard/ai-generated-form";
 
 function ApplicationContent() {
@@ -48,18 +47,7 @@ function ApplicationContent() {
         
         setCompany(foundCompany);
         setProcess(foundProcess);
-
-        if (foundCompany?.logo) {
-            try {
-                const url = await getFile(foundCompany.logo);
-                setLogoUrl(url);
-            } catch (e) {
-                console.error("Failed to load company logo:", e);
-                setLogoUrl(null);
-            }
-        } else {
-            setLogoUrl(null);
-        }
+        setLogoUrl(foundCompany?.logo || null);
 
         setLoading(false);
     }

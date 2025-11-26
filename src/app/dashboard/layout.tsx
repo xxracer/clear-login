@@ -18,6 +18,8 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
   const checkNewCandidates = useCallback(async () => {
     try {
+      // In a full Firestore implementation, we would use a real-time listener (onSnapshot)
+      // to get these updates pushed to us. For this simple polling, we'll keep it this way.
       const allNewCandidates = await getNewCandidates();
       const totalCount = allNewCandidates.length;
 
@@ -25,11 +27,9 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
       const newUnseenCount = totalCount - lastSeenCount;
 
       if (newUnseenCount > 0) {
-        const audio = new Audio(notificationSound);
-        audio.play().catch(e => console.error("Failed to play notification sound:", e));
+        // new Audio(notificationSound).play().catch(e => console.error("Failed to play sound"));
       }
       
-      // Dispatch custom event to update sidebar with detailed counts
       window.dispatchEvent(new CustomEvent('candidate-update', { 
         detail: { newUnseenCount, totalCount }
       }));
@@ -42,22 +42,18 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
   useEffect(() => {
     // Check for new candidates when the component mounts
     checkNewCandidates();
-
-    // Set up a listener for storage events to detect changes from other tabs
-    window.addEventListener('storage', checkNewCandidates);
     
-    // Also listen for our custom event that signals a data refresh
+    // Listen for custom event that signals a data refresh
     window.addEventListener('data-reset', checkNewCandidates);
     
     // Listen for when candidates page is visited to re-check
     window.addEventListener('candidates-viewed', checkNewCandidates);
 
     // Also poll periodically as a fallback
-    const intervalId = setInterval(checkNewCandidates, 15000); // Check every 15 seconds
+    const intervalId = setInterval(checkNewCandidates, 30000); // Check every 30 seconds
 
     // Clean up listeners on component unmount
     return () => {
-      window.removeEventListener('storage', checkNewCandidates);
       window.removeEventListener('data-reset', checkNewCandidates);
       window.removeEventListener('candidates-viewed', checkNewCandidates);
       clearInterval(intervalId);

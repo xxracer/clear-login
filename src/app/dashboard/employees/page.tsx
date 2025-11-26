@@ -42,7 +42,7 @@ function EmployeeList({
     onStatusChange: (id: string, info: InactiveInfo) => void,
     onDelete: (id: string) => void,
     onUpload: (employeeId: string, file: File, title: string, type: 'required' | 'misc') => void,
-    onDeleteFile: (employeeId: string, fileId: string) => void,
+    onDeleteFile: (employeeId: string, fileUrl: string) => void,
     isUploading: boolean,
 }) {
     const [isInactiveModalOpen, setInactiveModalOpen] = useState(false);
@@ -162,7 +162,7 @@ function EmployeeList({
                                                 <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
                                                     <FileIcon className="h-4 w-4" /> {doc.title}
                                                 </a>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteFile(employee.id, doc.id)}>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteFile(employee.id, doc.url)}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>
@@ -195,7 +195,7 @@ function EmployeeList({
                                                 <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
                                                     <FileIcon className="h-4 w-4" /> {doc.title}
                                                 </a>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteFile(employee.id, doc.id)}>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteFile(employee.id, doc.url)}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>
@@ -317,11 +317,6 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     loadData();
-    // Listen for storage changes to keep data in sync across tabs
-    window.addEventListener('storage', loadData);
-    return () => {
-      window.removeEventListener('storage', loadData);
-    };
   }, [loadData]);
   
   const onEmployeeAdded = () => {
@@ -363,19 +358,17 @@ export default function EmployeesPage() {
       }
   }
 
-  const handleDeleteFile = async (employeeId: string, fileId: string) => {
-      if (!confirm("Are you sure you want to delete this document?")) return;
+  const handleDeleteFile = async (employeeId: string, fileUrl: string) => {
+      if (!confirm("Are you sure you want to delete this document? This will delete the file from storage permanently.")) return;
 
       toast({ title: 'Deleting...', description: 'Please wait while the file is deleted.'});
       try {
-          // Here, we also need to delete the file from KV storage if possible,
-          // but for now, we'll just remove the reference.
-          await deleteEmployeeFile(employeeId, fileId);
-          toast({ title: 'File Deleted', description: 'The document reference has been removed.'});
+          await deleteEmployeeFile(employeeId, fileUrl);
+          toast({ title: 'File Deleted', description: 'The document has been removed.'});
           loadData();
       } catch (error) {
           console.error(error);
-          toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete the file reference.'});
+          toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete the file.'});
       }
   }
 
@@ -421,27 +414,21 @@ export default function EmployeesPage() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-        <AlertDialog>
-            <AlertDialogTrigger asChild>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
                 <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add Legacy Employee
                 </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="sm:max-w-[600px]">
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Add Legacy Employee</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This feature uses AI to automatically extract employee information from old application PDFs, saving you manual data entry time. Simply upload the PDF, and the system will create a digital record for you.
-                        <br/><br/>
-                        <strong className="text-amber-600">This feature is coming soon.</strong>
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogAction>Got it!</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle>Add Legacy Employee</DialogTitle>
+                    <CardDescription>Upload an old employee's application PDF. The AI will extract their information.</CardDescription>
+                </DialogHeader>
+                <AddLegacyEmployeeForm onEmployeeAdded={onEmployeeAdded} />
+            </DialogContent>
+        </Dialog>
       </div>
       
        <div className="relative">

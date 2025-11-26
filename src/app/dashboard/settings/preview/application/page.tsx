@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
-import { getFile } from "@/app/actions/kv-actions";
 
 
 export default function ApplicationPreviewPage() {
@@ -33,17 +32,10 @@ export default function ApplicationPreviewPage() {
           companyToSet = { name: "Your Company" };
         }
         setCompany(companyToSet);
-
-        if (companyToSet?.logo) {
-          const url = await getFile(companyToSet.logo);
-          setLogoUrl(url);
-        } else {
-          setLogoUrl(null)
-        }
+        setLogoUrl(companyToSet?.logo || null);
         
         const imageKeys = companyToSet?.onboardingProcesses?.[0]?.applicationForm?.images || [];
-        const urls = await Promise.all(imageKeys.map(key => getFile(key).catch(() => null)));
-        setCustomImageUrls(urls.filter(Boolean) as string[]);
+        setCustomImageUrls(imageKeys); // Directly use URLs
 
 
       } catch (error) {

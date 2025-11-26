@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,6 @@ import { format, parse } from "date-fns";
 import { extractEmployeeDataFromPdf } from "@/ai/flows/extract-employee-data";
 import { createLegacyEmployee } from "@/app/actions/client-actions";
 import { ExtractEmployeeDataOutput } from "@/lib/schemas";
-import { uploadKvFile } from "@/app/actions/kv-actions";
 
 
 // Helper to convert a File to a base64 data URI
@@ -43,6 +42,7 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
     const [error, setError] = useState<string | null>(null);
     const [extractedData, setExtractedData] = useState<ExtractEmployeeDataOutput | null>(null);
     const [hireDate, setHireDate] = useState<Date | null>(null);
+    const [isPending, startTransition] = useTransition();
 
     const { control, handleSubmit, watch, formState: { errors } } = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -70,48 +70,44 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
     
     const handleConfirmAndSave = async () => {
         if (!extractedData || !hireDate || !pdfFile) return;
-        setIsLoading(true);
         
-        try {
-            // First, upload the original PDF to KV and get its key
-            const tempId = Date.now().toString(); // a temporary id for folder structure
-            const applicationPdfUrl = await uploadKvFile(pdfFile, `${tempId}/legacy-application.pdf`);
+        startTransition(async () => {
+            try {
+                // The AI returns the date as a "YYYY-MM-DD" string. Parse it into a Date object.
+                const expirationDateStr = extractedData.driversLicenseExpiration || "";
+                const expirationDate = expirationDateStr ? parse(expirationDateStr, 'yyyy-MM-dd', new Date()) : undefined;
 
-            // The AI returns the date as a "YYYY-MM-DD" string. Parse it into a Date object.
-            const expirationDateStr = extractedData.driversLicenseExpiration || "";
-            const expirationDate = expirationDateStr ? parse(expirationDateStr, 'yyyy-MM-dd', new Date()) : undefined;
-
-            const employeeData = {
-                firstName: extractedData.firstName,
-                lastName: extractedData.lastName,
-                streetAddress: extractedData.address,
-                city: extractedData.city,
-                state: extractedData.state,
-                zipCode: extractedData.zipCode,
-                driversLicenseExpiration: expirationDate && !isNaN(expirationDate.getTime()) ? expirationDate.toISOString() : undefined,
-                date: hireDate.toISOString(), // Using 'date' field to store hire date as it's used elsewhere for hire/application date
-                position: extractedData.position,
-                homePhone: extractedData.homePhone,
-                emergencyContact: extractedData.emergencyContact,
-                documents: [],
-                miscDocuments: [],
-                applicationPdfUrl, // Save the key to the uploaded PDF
-            };
-            
-            const result = await createLegacyEmployee(employeeData);
-            
-            if (result.success) {
-                toast({ title: "Employee Added", description: `${extractedData.firstName} ${extractedData.lastName} has been added to the system.` });
-                onEmployeeAdded(); // Callback to close dialog and refresh list
-            } else {
-                toast({ variant: "destructive", title: "Save Failed", description: result.error });
+                const employeeData = {
+                    firstName: extractedData.firstName,
+                    lastName: extractedData.lastName,
+                    streetAddress: extractedData.address,
+                    city: extractedData.city,
+                    state: extractedData.state,
+                    zipCode: extractedData.zipCode,
+                    driversLicenseExpiration: expirationDate && !isNaN(expirationDate.getTime()) ? expirationDate.toISOString() : undefined,
+                    date: hireDate.toISOString(), // Using 'date' field to store hire date as it's used elsewhere for hire/application date
+                    position: extractedData.position,
+                    homePhone: extractedData.homePhone,
+                    emergencyContact: extractedData.emergencyContact,
+                    documents: [],
+                    miscDocuments: [],
+                    // We don't save the PDF itself for legacy employees in this version
+                    // applicationPdfUrl, 
+                };
+                
+                const result = await createLegacyEmployee(employeeData);
+                
+                if (result.success) {
+                    toast({ title: "Employee Added", description: `${extractedData.firstName} ${extractedData.lastName} has been added to the system.` });
+                    onEmployeeAdded(); // Callback to close dialog and refresh list
+                } else {
+                    toast({ variant: "destructive", title: "Save Failed", description: result.error });
+                }
+            } catch (e) {
+                console.error(e);
+                toast({ variant: "destructive", title: "Save Failed", description: (e as Error).message || "An unexpected error occurred." });
             }
-        } catch (e) {
-            console.error(e);
-            toast({ variant: "destructive", title: "Save Failed", description: (e as Error).message || "An unexpected error occurred." });
-        } finally {
-            setIsLoading(false);
-        }
+        });
     }
 
 
@@ -155,9 +151,9 @@ export function AddLegacyEmployeeForm({ onEmployeeAdded }: { onEmployeeAdded: ()
                     <Input value={extractedData.driversLicenseExpiration} onChange={(e) => setExtractedData({ ...extractedData, driversLicenseExpiration: e.target.value })} />
                 </div>
                 <div className="flex justify-end gap-2">
-                     <Button variant="ghost" onClick={() => setExtractedData(null)}>Back</Button>
-                     <Button onClick={handleConfirmAndSave} disabled={isLoading}>
-                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     <Button variant="ghost" onClick={() => setExtractedData(null)} disabled={isPending}>Back</Button>
+                     <Button onClick={handleConfirmAndSave} disabled={isPending}>
+                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                          Confirm and Save
                      </Button>
                 </div>

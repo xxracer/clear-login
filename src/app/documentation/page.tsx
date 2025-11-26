@@ -9,7 +9,6 @@ import { getCompanies } from "@/app/actions/company-actions";
 import { Company, OnboardingProcess, RequiredDoc } from "@/lib/company-schemas";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { getFile } from "../actions/kv-actions";
 
 
 function DocumentationPageContent() {
@@ -47,18 +46,7 @@ function DocumentationPageContent() {
 
             setCompany(foundCompany);
             setProcess(foundProcess);
-            
-            if (foundCompany?.logo) {
-                try {
-                    const url = await getFile(foundCompany.logo);
-                    setLogoUrl(url);
-                } catch(e) {
-                    console.error("Failed to load company logo:", e);
-                    setLogoUrl(null);
-                }
-            } else {
-                setLogoUrl(null);
-            }
+            setLogoUrl(foundCompany?.logo || null);
 
             setLoading(false);
         }

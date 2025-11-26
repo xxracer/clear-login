@@ -1,93 +1,29 @@
 
 'use server';
 
-import { kv } from '@vercel/kv';
+// This file is deprecated as all file operations are now handled by Firebase Storage.
+// It is kept to avoid build errors from any lingering imports, but its functions are non-operational.
 
-// Helper to convert a File to a base64 data URI string
 async function fileToDataURL(file: File): Promise<string> {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
-    return `data:${file.type};base64,${base64}`;
+    console.warn("kv-actions.ts is deprecated. Use Firebase Storage actions instead.");
+    return "";
 }
 
-
-/**
- * Uploads a file to Vercel KV.
- * The key will be the `fileName`.
- * @param file The file to upload.
- * @param fileName The name to use as the key in KV.
- * @returns The key under which the file was stored.
- */
 export async function uploadKvFile(file: File, fileName: string): Promise<string> {
-  try {
-    const dataUrl = await fileToDataURL(file);
-    await kv.set(fileName, dataUrl);
-    // We return the key, which now acts as the URL/identifier
-    return fileName; 
-  } catch (error) {
-    console.error("KV Upload Error:", error);
-    throw new Error("Failed to upload file to Vercel KV.");
-  }
+  console.warn("kv-actions.ts is deprecated. Use Firebase Storage actions instead.");
+  return "";
 }
 
-/**
- * Retrieves a file (as a data URL string) from Vercel KV.
- * @param fileKey The key of the file to retrieve.
- * @returns The data URL of the file, or null if not found.
- */
 export async function getFile(fileKey: string): Promise<string | null> {
-   try {
-    const dataUrl = await kv.get<string>(fileKey);
-    return dataUrl;
-  } catch (error) {
-    console.error("KV Fetch Error:", error);
-    return null;
-  }
+   console.warn("kv-actions.ts is deprecated. Use Firebase Storage actions instead.");
+   return null;
 }
 
-/**
- * Deletes a file from Vercel KV.
- * @param fileKey The key of the file to delete.
- */
 export async function deleteFile(fileKey: string): Promise<void> {
-   try {
-    await kv.del(fileKey);
-  } catch (error) {
-    console.error("KV Deletion Error:", error);
-  }
+   console.warn("kv-actions.ts is deprecated. Use Firebase Storage actions instead.");
 }
 
-/**
- * Retrieves a file from KV and returns it as a Response object.
- * This is useful for streaming files or displaying them directly in the browser.
- */
 export async function getFileAsResponse(key: string): Promise<Response> {
-  try {
-    const dataUrl = await kv.get<string>(key);
-
-    if (!dataUrl) {
-      return new Response('File not found', { status: 404 });
-    }
-
-    // Correctly parse the Data URI
-    const parts = dataUrl.match(/^data:(.+);base64,(.+)$/);
-    if (!parts) {
-      return new Response('Invalid data URL format', { status: 500 });
-    }
-
-    const mimeType = parts[1];
-    const base64Data = parts[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    return new Response(buffer, {
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Length': String(buffer.length),
-      },
-    });
-  } catch (error) {
-    console.error(`KV getFileAsResponse Error for key ${key}:`, error);
-    return new Response('Error retrieving file', { status: 500 });
-  }
+  console.warn("kv-actions.ts is deprecated. Use Firebase Storage actions instead.");
+  return new Response('This function is deprecated.', { status: 410 });
 }

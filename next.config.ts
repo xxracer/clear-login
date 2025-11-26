@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      }
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

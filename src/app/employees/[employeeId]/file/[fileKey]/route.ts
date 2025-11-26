@@ -1,21 +1,44 @@
 
-import { getFileAsResponse } from "@/app/actions/kv-actions";
+import { getStorage, ref, getBytes } from "firebase/storage";
+import { getSdks } from "@/firebase";
 import { NextRequest } from "next/server";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { employeeId: string, fileKey: string } }
+    { params }: { params: { fileKey: string } }
 ) {
-    // The params are URL-encoded, so decode them.
-    const employeeId = decodeURIComponent(params.employeeId);
-    const fileKey = decodeURIComponent(params.fileKey);
+    try {
+        const { firebaseApp } = getSdks();
+        const storage = getStorage(firebaseApp);
+        const fileKey = decodeURIComponent(params.fileKey);
+        
+        // In Firebase Storage, the full URL is the "key". We create a ref from it.
+        const storageRef = ref(storage, fileKey);
+        
+        const bytes = await getBytes(storageRef);
+        
+        // This is a simple way to guess content type. A more robust solution
+        // might store metadata in Firestore.
+        let contentType = 'application/octet-stream';
+        if (fileKey.includes('.pdf')) contentType = 'application/pdf';
+        else if (fileKey.includes('.png')) contentType = 'image/png';
+        else if (fileKey.includes('.jpg') || fileKey.includes('.jpeg')) contentType = 'image/jpeg';
 
-    // Reconstruct the full key as it was saved.
-    // This part depends on the saving logic in `employees/page.tsx`.
-    // Example reconstruction:
-    // const fullKey = `${employeeId}/required/${fileKey}`; 
-    // You MUST know the full path. For this example, we assume the fileKey is the full path.
-    const fullKey = fileKey;
 
-    return await getFileAsResponse(fullKey);
+        return new Response(bytes, {
+            headers: {
+                'Content-Type': contentType,
+                'Content-Length': String(bytes.length),
+            },
+        });
+
+    } catch (error: any) {
+        console.error(`Error retrieving file from Firebase Storage for key ${params.fileKey}:`, error);
+        
+        if (error.code === 'storage/object-not-found') {
+            return new Response('File not found', { status: 404 });
+        }
+        
+        return new Response('Error retrieving file', { status: 500 });
+    }
 }

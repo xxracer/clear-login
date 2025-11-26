@@ -1,14 +1,12 @@
 
-import { NextRequest } from "next/server";
+// This file is no longer used and can be deleted.
+// The new route is /app/employees/[employeeId]/file/[fileKey]/route.ts
 
-// This route is no longer needed with localStorage.
-// However, we keep it to prevent build errors if it's referenced somewhere.
-// It will now return a 404.
+import { NextRequest } from "next/server";
 
 export async function GET(
     request: NextRequest,
     { params }: { params: { fileKey: string } }
 ) {
-    
-    return new Response('File access is now handled via data URIs with localStorage.', { status: 404 });
+    return new Response('This route is deprecated.', { status: 410 });
 }

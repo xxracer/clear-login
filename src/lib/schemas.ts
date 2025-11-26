@@ -8,9 +8,9 @@ const ACCEPTED_PDF_ONLY = ["application/pdf"];
 
 
 export interface DocumentFile {
-  id: string; // This will be a unique ID
+  id: string; // This will be the Firebase Storage download URL
   title: string;
-  url: string; // This will now be a data URI
+  url: string; // Also the Firebase Storage download URL
 }
 
 const educationEntrySchema = z.object({
@@ -152,15 +152,15 @@ export const interviewReviewSchema = z.object({
 
 export type InterviewReviewSchema = z.infer<typeof interviewReviewSchema>;
 
-// This is the type for the data that will be stored in localStorage
+// This is the type for the data that will be stored in Firestore
 export type ApplicationData = Omit<ApplicationSchema, 'resume' | 'driversLicense'> & {
     id: string;
     created_at?: string;
-    resume?: string; // This will now be a data URI
-    driversLicense?: string; // This will now be a data URI
-    applicationPdfUrl?: string; // data URI for the original PDF from a legacy employee
+    resume?: string; // This will now be a Firebase Storage URL
+    driversLicense?: string; // This will now be a Firebase Storage URL
+    applicationPdfUrl?: string; // URL for the original PDF from a legacy employee
     
-    // New document fields from documentation form (will store data URIs)
+    // New document fields from documentation form (will store Storage URLs)
     idCard?: string;
     proofOfAddress?: string;
     i9?: string;
@@ -221,5 +221,3 @@ export const ExtractEmployeeDataOutputSchema = z.object({
   emergencyContact: z.string().describe("The employee's emergency contact (name and phone number)."),
 });
 export type ExtractEmployeeDataOutput = z.infer<typeof ExtractEmployeeDataOutputSchema>;
-
-    

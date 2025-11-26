@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess } from "@/app/actions/company-actions";
+import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess, uploadCompanyLogo, deleteCompanyLogo } from "@/app/actions/company-actions";
 import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
-import { getFile, uploadKvFile, deleteFile } from "@/app/actions/kv-actions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateIdForServer } from "@/lib/server-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -66,19 +64,10 @@ export default function SettingsPage() {
       };
       
       setCompany(firstCompany);
+      setLogoPreview(firstCompany.logo || null);
 
       if (firstCompany.id) {
           setIsCompanySaved(true);
-      }
-
-      if (firstCompany.logo) {
-        try {
-          const url = await getFile(firstCompany.logo);
-          setLogoPreview(url);
-        } catch (e) {
-          console.error("Failed to load logo", e);
-          setLogoPreview(null);
-        }
       }
       setIsLoading(false);
     }
@@ -90,6 +79,14 @@ export default function SettingsPage() {
   const handleFieldChange = (field: keyof Company, value: any) => {
     setCompany(prev => ({ ...prev, [field]: value }));
   };
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  }
   
   const handleAddNewProcess = async (name: string, fields: AiFormField[]) => {
       if (!company.id) {
@@ -146,17 +143,19 @@ export default function SettingsPage() {
       let dataToSave = { ...company };
       
       if (logoFile) {
-        const logoKey = `logo-${dataToSave.name?.replace(/\s+/g, '-')}-${Date.now()}`;
-        if (dataToSave.logo) {
-          await deleteFile(dataToSave.logo);
+        // If there was an old logo, delete it from storage
+        if(dataToSave.logo) {
+            await deleteCompanyLogo(dataToSave.logo);
         }
-        dataToSave.logo = await uploadKvFile(logoFile, logoKey);
+        const newLogoUrl = await uploadCompanyLogo(logoFile);
+        dataToSave.logo = newLogoUrl;
       }
 
       const result = await createOrUpdateCompany(dataToSave);
       if (result.success && result.company) {
           setCompany(result.company);
           setLogoFile(undefined);
+          setLogoPreview(result.company.logo || null);
           setIsCompanySaved(true);
           setShowSavedDialog(true);
       } else {
@@ -235,7 +234,7 @@ export default function SettingsPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>First, Set Up Your Company</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Before creating onboarding processes, please fill out your company's basic information. This information is saved once and cannot be changed later.
+                                    Before creating onboarding processes, please fill out your company's basic information.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -249,39 +248,37 @@ export default function SettingsPage() {
         <CardContent>
           <div className="border rounded-lg p-4 relative">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <fieldset disabled={isCompanySaved}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name</Label>
-                    <Input id="company-name" placeholder="e.g., Acme Company" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name</Label>
+                  <Input id="company-name" placeholder="e.g., Acme Company" value={company.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company-address">Address</Label>
+                  <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={company.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="company-phone">Phone Number</Label>
+                      <Input id="company-phone" placeholder="(555) 123-4567" value={company.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company-address">Address</Label>
-                    <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={company.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="company-phone">Phone Number</Label>
-                        <Input id="company-phone" placeholder="(555) 123-4567" value={company.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="company-fax">Fax</Label>
-                        <Input id="company-fax" placeholder="(555) 123-4568" value={company.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company-email">Company Email</Label>
-                    <Input id="company-email" type="email" placeholder="contact@acme.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="company-logo">Company Logo</Label>
-                      <div className="flex items-center gap-4">
-                          <Input id="company-logo" type="file" className="max-w-xs" onChange={(e) => { if (e.target.files) setLogoFile(e.target.files[0])}} accept="image/*" />
-                          {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company-fax">Fax</Label>
+                      <Input id="company-fax" placeholder="(555) 123-4568" value={company.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
                   </div>
                 </div>
-              </fieldset>
+                <div className="space-y-2">
+                  <Label htmlFor="company-email">Company Email</Label>
+                  <Input id="company-email" type="email" placeholder="contact@acme.com" value={company.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="company-logo">Company Logo</Label>
+                    <div className="flex items-center gap-4">
+                        <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
+                        {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                    </div>
+                </div>
+              </div>
               <div className="space-y-4 rounded-md border p-4 bg-muted/30">
                 <h3 className="font-semibold text-foreground">Onboarding Users</h3>
                 <div className="space-y-2">
@@ -300,9 +297,9 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="mt-6">
-              <Button size="lg" disabled={isPending || isCompanySaved} onClick={handleSave}>
+              <Button size="lg" disabled={isPending} onClick={handleSave}>
                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Company & Continue
+                {isCompanySaved ? 'Update Company Details' : 'Save Company & Continue'}
               </Button>
             </div>
           </div>
@@ -658,7 +655,7 @@ export default function SettingsPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Settings Saved</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Company details have been updated and are now locked. You can still manage onboarding users.
+                    Company details have been updated.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -673,7 +670,7 @@ export default function SettingsPage() {
                 <AlertDialogTitle>Coming Soon!</AlertDialogTitle>
                 <AlertDialogDescription>
                     This feature will allow you to upload an existing form (PDF or image) and our AI will automatically convert it into a digital application.
-                </AlertDialogDescription>
+                </documentos>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogAction onClick={() => setComingSoonOpen(false)}>Got it!</AlertDialogAction>
