@@ -363,12 +363,16 @@ export default function EmployeesPage() {
 
       toast({ title: 'Deleting...', description: 'Please wait while the file is deleted.'});
       try {
-          await deleteEmployeeFile(employeeId, fileUrl);
-          toast({ title: 'File Deleted', description: 'The document has been removed.'});
-          loadData();
+          const result = await deleteEmployeeFile(employeeId, fileUrl);
+          if (result.success) {
+            toast({ title: 'File Deleted', description: 'The document has been removed.'});
+            loadData();
+          } else {
+            throw new Error(result.error);
+          }
       } catch (error) {
           console.error(error);
-          toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete the file.'});
+          toast({ variant: 'destructive', title: 'Deletion Failed', description: (error as Error).message || 'Could not delete the file.'});
       }
   }
 

@@ -17,7 +17,7 @@ async function getFirebaseServices() {
     const adminApp = await initFirebaseAdmin();
     const firestore = getFirestore(adminApp);
     const storage = getStorage(adminApp);
-    return { firestore, storage };
+    return { firestore, storage, adminApp };
 }
 
 export async function getCompanies(): Promise<Company[]> {
@@ -178,9 +178,9 @@ export async function deleteAllCompanies() {
 // --- File Management ---
 
 export async function uploadCompanyLogo(file: File): Promise<string> {
-  const { storage } = await getFirebaseServices();
+  const { adminApp } = await getFirebaseServices();
+  const bucket = getStorage(adminApp).bucket(); // Get default bucket
   const filePath = `logos/${Date.now()}-${file.name}`;
-  const bucket = storage.bucket('onboard-panel-gx822.appspot.com');
   const blob = bucket.file(filePath);
 
   const fileBuffer = await file.arrayBuffer();
@@ -198,12 +198,18 @@ export async function uploadCompanyLogo(file: File): Promise<string> {
 
 export async function deleteCompanyLogo(downloadURL: string) {
     if (!downloadURL) return;
-    const { storage } = await getFirebaseServices();
+    const { adminApp } = await getFirebaseServices();
+    const bucket = getStorage(adminApp).bucket();
     try {
-        const bucket = storage.bucket('onboard-panel-gx822.appspot.com');
-        const fileName = new URL(downloadURL).pathname.split('/').pop();
-        if (fileName) {
-            await bucket.file(`logos/${fileName}`).delete();
+        // Extract the object path from the public URL
+        const url = new URL(downloadURL);
+        // The path in the URL includes the bucket name, so we need to remove it
+        // The pathname will be something like /<bucket-name>/logos/1234.jpg
+        const pathParts = url.pathname.split('/');
+        const objectPath = pathParts.slice(2).join('/'); // Slice to remove the leading empty string and bucket name
+
+        if (objectPath) {
+            await bucket.file(objectPath).delete();
         }
     } catch (error) {
         // Log errors but don't fail the main operation
