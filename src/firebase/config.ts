@@ -2,11 +2,12 @@
 // Este objeto contiene la configuración PÚBLICA para la conexión del NAVEGADOR a Firebase.
 // Es seguro incluirlo en el código del cliente.
 export const firebaseConfig = {
-  apiKey: "AIzaSyDmXiYc2YC0Y6PVxEJs7xLB_M73SfHtUEs",
-  authDomain: "onboard-panel-gx822.firebaseapp.com",
-  databaseURL: "https://onboard-panel-gx822-default-rtdb.firebaseio.com",
-  projectId: "onboard-panel-gx822",
-  storageBucket: "onboard-panel-gx822.appspot.com",
-  messagingSenderId: "872617759649",
-  appId: "1:872617759649:web:e2ade97d407b3498fc31e0"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+
