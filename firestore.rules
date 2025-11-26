@@ -94,7 +94,7 @@ service cloud.firestore {
      * @path        /users/{userId}
      */
     match /users/{userId} {
-      allow list: if isSuperuser();
+      allow list: if isSignedIn();
       allow read: if isSignedIn() && request.auth.uid == userId;
       // Allow create for a superuser (who creates the first admin for a company)
       allow create: if isSuperuser();
