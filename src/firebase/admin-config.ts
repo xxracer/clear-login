@@ -27,7 +27,8 @@ async function getFirebaseAdminApp(): Promise<App> {
   }
 
   try {
-    const serviceAccount = JSON.parse(serviceAccountJson);
+    const decodedServiceAccountJson = Buffer.from(serviceAccountJson, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(decodedServiceAccountJson);
     const appOptions: AppOptions = {
       credential: credential.cert(serviceAccount),
     };
