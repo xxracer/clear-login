@@ -1,6 +1,6 @@
 
 import { getStorage, ref, getBytes } from "firebase/storage";
-import { getSdks } from "@/firebase";
+import { initializeFirebase } from "@/firebase";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
     { params }: { params: { fileKey: string } }
 ) {
     try {
-        const { firebaseApp } = getSdks();
+        const { firebaseApp } = initializeFirebase();
         const storage = getStorage(firebaseApp);
         const fileKey = decodeURIComponent(params.fileKey);
         

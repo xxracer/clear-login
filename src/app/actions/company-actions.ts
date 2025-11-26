@@ -6,14 +6,14 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "fire
 import { Company, OnboardingProcess } from "@/lib/company-schemas";
 import { generateIdForServer } from "@/lib/server-utils";
 import { revalidatePath } from 'next/cache';
-import { getSdks } from "@/firebase";
+import { initializeFirebase } from "@/firebase";
 
 // This file now acts as a server-side API for interacting with Firestore.
 
 const COMPANIES_COLLECTION = 'companies';
 
 async function getFirebaseServices() {
-    const { firestore: fs, firebaseApp } = getSdks();
+    const { firestore: fs, firebaseApp } = initializeFirebase();
     const storage = getStorage(firebaseApp);
     return { firestore: fs, storage };
 }

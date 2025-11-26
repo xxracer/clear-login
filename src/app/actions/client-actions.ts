@@ -5,15 +5,14 @@ import { generateId } from "@/lib/local-storage-client";
 import { type ApplicationData, type ApplicationSchema, type InterviewReviewSchema, DocumentFile } from "@/lib/schemas";
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getSdks } from "@/firebase";
+import { initializeFirebase } from "@/firebase";
 
 // This file now acts as a client-side API for interacting with Firestore and Storage.
 
-const { firestore } = getSdks();
 const CANDIDATES_COLLECTION = 'candidates';
 
 async function getFirebaseServices() {
-    const { firestore: fs, firebaseApp } = getSdks();
+    const { firestore: fs, firebaseApp } = initializeFirebase();
     const storage = getStorage(firebaseApp);
     return { firestore: fs, storage };
 }
@@ -127,7 +126,7 @@ export async function getCandidate(id: string): Promise<ApplicationData | null> 
 export async function updateCandidateWithDocuments(id: string, documents: { [key: string]: string }): Promise<{ success: boolean, error?: string }> {
     try {
         const { firestore } = await getFirebaseServices();
-        const candidateRef = doc(firestore, CANDIDATES_COLLECTION, id);
+        const candidateRef = doc(firestore, CANDIDATES_COLlection, id);
         await updateDoc(candidateRef, documents);
         return { success: true };
     } catch (error) {
