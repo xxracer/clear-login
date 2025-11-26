@@ -26,23 +26,13 @@ export default function SuperUserLoginPage() {
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // Force refresh of the token to get latest claims
-            const idTokenResult = await userCredential.user.getIdTokenResult(true);
+            // After successful login, just redirect. The dashboard will handle role checks.
+            toast({
+                title: "Login Successful",
+                description: "Redirecting to dashboard...",
+            });
+            router.push("/superuser/dashboard");
 
-            if (idTokenResult.claims.superuser) {
-                 toast({
-                    title: "Super User Access Granted",
-                    description: "Redirecting to dashboard...",
-                });
-                router.push("/superuser/dashboard");
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Access Denied",
-                    description: "You are not authorized as a super user.",
-                });
-                 await auth.signOut();
-            }
         } catch (error) {
              toast({
                 variant: "destructive",
