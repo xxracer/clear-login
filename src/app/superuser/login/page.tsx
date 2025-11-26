@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function SuperUserLoginPage() {
     const router = useRouter();
@@ -25,27 +24,14 @@ export default function SuperUserLoginPage() {
         e.preventDefault();
         setIsLoading(true);
 
-        // First, check if the hardcoded credentials are correct for superuser access gate.
+        // TEMPORARY: Simple password check to allow initial access to create the superuser.
+        // This bypasses Firebase Auth for this one-time entry.
         if (email === "Maijel@ipltecnologies.com" && password === "millionares2025") {
-            // If they are, then try to sign in to Firebase with these credentials.
-            signInWithEmailAndPassword(auth, email, password)
-                .then(() => {
-                    toast({
-                        title: "Super User Access Granted",
-                        description: "Welcome, Administrator.",
-                    });
-                    router.push("/superuser/dashboard");
-                })
-                .catch((error) => {
-                     // This can happen if the superuser hasn't been created in Firebase yet.
-                    console.error("Superuser Firebase Sign-In Error: ", error);
-                    toast({
-                        variant: "destructive",
-                        title: "Firebase Auth Error",
-                        description: "Could not sign in. Ensure the superuser exists in Firebase Authentication.",
-                    });
-                    setIsLoading(false);
-                });
+             toast({
+                title: "Super User Access Granted",
+                description: "Redirecting to dashboard...",
+            });
+            router.push("/superuser/dashboard");
         } else {
             toast({
                 variant: "destructive",
