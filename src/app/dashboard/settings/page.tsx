@@ -28,8 +28,10 @@ import { cn } from "@/lib/utils";
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(true);
-  const [company, setCompany] = useState<Partial<Company>>({});
+  const [isLoading, setIsLoading] = useState(false); // Used for local loading like AI generation
+  const [company, setCompany] = useState<Partial<Company>>({
+    onboardingProcesses: []
+  });
   const [logoFile, setLogoFile] = useState<File | undefined>();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -39,8 +41,7 @@ export default function SettingsPage() {
   const [isAiBuilderOpen, setIsAiBuilderOpen] = useState(false);
   const [aiBuilderMode, setAiBuilderMode] = useState<'wizard' | 'prompt'>('wizard');
   const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-
+  
   const [isCompanyDetailsDialogOpen, setCompanyDetailsDialogOpen] = useState(false);
   const [isProcessesDialogOpen, setIsProcessesDialogOpen] = useState(false);
   const [isAiBuilderInfoOpen, setIsAiBuilderInfoOpen] = useState(false);
@@ -57,25 +58,8 @@ export default function SettingsPage() {
   const showCompanyDetailsHint = !company.name;
   const showProcessesHint = !showCompanyDetailsHint && (!company.onboardingProcesses || company.onboardingProcesses.length === 0);
 
-  const loadInitialData = async () => {
-      setIsLoading(true);
-      const companies = await getCompanies();
-      const firstCompany = companies[0] || {
-        onboardingProcesses: []
-      };
-      
-      setCompany(firstCompany);
-      setLogoPreview(firstCompany.logo || null);
-
-      if (firstCompany.id) {
-          setIsCompanySaved(true);
-      }
-      setIsLoading(false);
-    }
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  // We no longer load data on mount to make the form "dumb"
+  // The user will fill it and click save, which either creates or updates.
 
   const handleFieldChange = (field: keyof Company, value: any) => {
     setCompany(prev => ({ ...prev, [field]: value }));
@@ -90,8 +74,8 @@ export default function SettingsPage() {
   }
   
   const handleAddNewProcess = async (name: string, fields: AiFormField[]) => {
-      if (!company.id) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Company must be saved before adding a process.' });
+      if (!isCompanySaved) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Company must be saved before adding a process. Please fill out the company details and click "Save Company & Continue".' });
           return;
       }
       const newProcess: OnboardingProcess = {
@@ -121,7 +105,7 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Prompt is empty', description: 'Please describe the form you want to create.' });
             return;
         }
-        setIsGenerating(true);
+        setIsLoading(true);
         try {
             const result = await generateForm({ prompt });
             await handleAddNewProcess(result.formName, result.fields);
@@ -129,7 +113,7 @@ export default function SettingsPage() {
         } catch (error) {
             toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
         } finally {
-            setIsGenerating(false);
+            setIsLoading(false);
         }
     };
 
@@ -144,7 +128,6 @@ export default function SettingsPage() {
       let dataToSave = { ...company };
       
       if (logoFile) {
-        // If there was an old logo, delete it from storage
         if(dataToSave.logo) {
             await deleteCompanyLogo(dataToSave.logo);
         }
@@ -168,7 +151,6 @@ export default function SettingsPage() {
   const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set a default active process ID if none is set and processes exist
     if (!activeProcessId && company.onboardingProcesses && company.onboardingProcesses.length > 0) {
       setActiveProcessId(company.onboardingProcesses[0].id);
     } else if (!activeProcessId) {
@@ -187,7 +169,6 @@ export default function SettingsPage() {
                     title: "Process Deleted",
                     description: `The onboarding process has been removed.`,
                 });
-                // If the deleted process was the active one, reset it
                 if(activeProcessId === processId) {
                     setActiveProcessId(null);
                 }
@@ -196,14 +177,6 @@ export default function SettingsPage() {
             }
         });
     };
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-10">
-        <Loader2 className="h-12 w-12 text-muted-foreground animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -508,8 +481,8 @@ export default function SettingsPage() {
                             </div>
                         </div>
                         <Textarea id="prompt-p1" placeholder="Describe the application form you need..." value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={!isCompanySaved} />
-                        <Button onClick={handleGenerateFromPrompt} disabled={isGenerating || isPending || !isCompanySaved}>
-                            {(isGenerating || isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button onClick={handleGenerateFromPrompt} disabled={isLoading || isPending || !isCompanySaved}>
+                            {(isLoading || isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Generate Form
                         </Button>
                          {!isCompanySaved && <p className="text-xs text-destructive mt-2">You must save the company details before generating a form.</p>}
