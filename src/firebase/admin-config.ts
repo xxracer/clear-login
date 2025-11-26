@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';
 
@@ -11,15 +12,22 @@ async function getFirebaseAdminApp(): Promise<App> {
     return adminApp;
   }
 
-  // This fallback is for local development and should not be used in production
-  // In a deployed environment, service account credentials will be automatically discovered.
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
     ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
     : undefined;
 
-  return initializeApp({
-    credential: credential.applicationDefault(),
-  }, FIREBASE_ADMIN_APP_NAME);
+  if (serviceAccount) {
+    // Explicitly use the service account if available
+    return initializeApp({
+      credential: credential.cert(serviceAccount),
+    }, FIREBASE_ADMIN_APP_NAME);
+  } else {
+    // Fallback for environments where ADC is expected to work
+    // In a deployed environment, service account credentials will be automatically discovered.
+    return initializeApp({
+      credential: credential.applicationDefault(),
+    }, FIREBASE_ADMIN_APP_NAME);
+  }
 }
 
 export const initFirebaseAdmin = getFirebaseAdminApp;
