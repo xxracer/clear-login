@@ -28,6 +28,13 @@ service cloud.firestore {
       let userProfile = getUserProfile();
       return userProfile.data.role == role;
     }
+
+    /**
+     * Checks if the authenticated user is a superuser.
+     */
+    function isSuperuser() {
+      return request.auth.token.superuser == true;
+    }
     
     /**
      * Checks if a resource belongs to the same company as the user.
@@ -87,12 +94,12 @@ service cloud.firestore {
      * @path        /users/{userId}
      */
     match /users/{userId} {
-      allow list: if isSignedIn();
+      allow list: if isSuperuser();
       allow read: if isSignedIn() && request.auth.uid == userId;
-      // Allow create for any signed-in user (superuser creates admins, company admins will create employees)
-      allow create: if isSignedIn();
+      // Allow create for a superuser (who creates the first admin for a company)
+      allow create: if isSuperuser();
       allow update: if isSignedIn() && request.auth.uid == userId; // Users can update their own profile
-      allow delete: if isSignedIn(); // Superuser can delete any user
+      allow delete: if isSuperuser(); // Superuser can delete any user
     }
 
     /**

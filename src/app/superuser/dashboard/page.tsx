@@ -134,9 +134,14 @@ function UserList() {
     const firestore = useFirestore();
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const auth = useAuth();
 
     useEffect(() => {
-        if (!firestore) return;
+        if (!firestore || !auth.currentUser) {
+            // Wait for user to be authenticated
+            return;
+        };
+
         setLoading(true);
         const usersRef = collection(firestore, 'users');
         const unsubscribe = onSnapshot(usersRef, (snapshot: QuerySnapshot<DocumentData>) => {
@@ -153,7 +158,7 @@ function UserList() {
         });
 
         return () => unsubscribe();
-    }, [firestore, toast]);
+    }, [firestore, auth.currentUser, toast]);
     
     const handleDeleteUser = async (uid: string) => {
         setIsDeleting(uid);
@@ -204,12 +209,12 @@ function UserList() {
                                     </p>
                                 </div>
                                 <div className="flex gap-2">
-                                     <Button variant="outline" size="sm" onClick={() => handleSetSuperuser(user.uid)} disabled={isClaiming === user.uid}>
+                                     <Button variant="outline" size="sm" onClick={() => handleSetSuperuser(user.uid)} disabled={isClaiming === user.uid} title="Promote to Superuser">
                                         {isClaiming === user.uid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4" />}
                                     </Button>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="destructive" size="icon" disabled={isDeleting === user.uid}>
+                                            <Button variant="destructive" size="icon" disabled={isDeleting === user.uid} title="Delete User">
                                                 {isDeleting === user.uid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                             </Button>
                                         </AlertDialogTrigger>
