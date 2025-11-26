@@ -11,23 +11,24 @@ import { useToast } from "@/hooks/use-toast";
 import { ShieldAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/firebase";
-import { signInAnonymously } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function SuperUserLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
     const auth = useAuth();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("Maijel@ipltecnologies.com");
+    const [password, setPassword] = useState("millionares2025");
     const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        
+
+        // First, check if the hardcoded credentials are correct for superuser access gate.
         if (email === "Maijel@ipltecnologies.com" && password === "millionares2025") {
-            // Use .then() to ensure sign-in completes before redirection
-            signInAnonymously(auth)
+            // If they are, then try to sign in to Firebase with these credentials.
+            signInWithEmailAndPassword(auth, email, password)
                 .then(() => {
                     toast({
                         title: "Super User Access Granted",
@@ -36,15 +37,15 @@ export default function SuperUserLoginPage() {
                     router.push("/superuser/dashboard");
                 })
                 .catch((error) => {
-                    console.error("Superuser Anonymous Sign-In Error: ", error);
+                     // This can happen if the superuser hasn't been created in Firebase yet.
+                    console.error("Superuser Firebase Sign-In Error: ", error);
                     toast({
                         variant: "destructive",
                         title: "Firebase Auth Error",
-                        description: "Could not create an anonymous session for superuser.",
+                        description: "Could not sign in. Ensure the superuser exists in Firebase Authentication.",
                     });
-                    setIsLoading(false); // Stop loading on error
+                    setIsLoading(false);
                 });
-
         } else {
             toast({
                 variant: "destructive",
