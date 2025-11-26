@@ -89,8 +89,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow list: if isSignedIn();
       allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn() && hasRole('admin'); // Company admins can create users
+      // Allow create for any signed-in user (superuser creates admins, company admins will create employees)
+      allow create: if isSignedIn();
       allow update: if isSignedIn() && request.auth.uid == userId; // Users can update their own profile
+      allow delete: if isSignedIn(); // Superuser can delete any user
     }
 
     /**

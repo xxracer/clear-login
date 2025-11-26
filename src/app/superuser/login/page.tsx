@@ -8,30 +8,51 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/firebase";
+import { signInAnonymously } from "firebase/auth";
 
 export default function SuperUserLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const auth = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
         
         if (email === "Maijel@ipltecnologies.com" && password === "millionares2025") {
-            toast({
-                title: "Super User Access Granted",
-                description: "Welcome, Administrator.",
-            });
-            router.push("/superuser/dashboard");
+            signInAnonymously(auth)
+                .then(() => {
+                    toast({
+                        title: "Super User Access Granted",
+                        description: "Welcome, Administrator.",
+                    });
+                    router.push("/superuser/dashboard");
+                })
+                .catch((error) => {
+                    console.error("Superuser Anonymous Sign-In Error: ", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Firebase Auth Error",
+                        description: "Could not create an anonymous session for superuser.",
+                    });
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+
         } else {
             toast({
                 variant: "destructive",
                 title: "Access Denied",
                 description: "Invalid credentials for Super User access.",
             });
+            setIsLoading(false);
         }
     };
 
@@ -76,8 +97,8 @@ export default function SuperUserLoginPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" variant="destructive" className="w-full">
-                            Access Admin Panel
+                        <Button type="submit" variant="destructive" className="w-full" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Access Admin Panel"}
                         </Button>
                     </CardFooter>
                 </form>
