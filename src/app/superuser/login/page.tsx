@@ -26,6 +26,7 @@ export default function SuperUserLoginPage() {
         setIsLoading(true);
         
         if (email === "Maijel@ipltecnologies.com" && password === "millionares2025") {
+            // Use .then() to ensure sign-in completes before redirection
             signInAnonymously(auth)
                 .then(() => {
                     toast({
@@ -41,9 +42,7 @@ export default function SuperUserLoginPage() {
                         title: "Firebase Auth Error",
                         description: "Could not create an anonymous session for superuser.",
                     });
-                })
-                .finally(() => {
-                    setIsLoading(false);
+                    setIsLoading(false); // Stop loading on error
                 });
 
         } else {
