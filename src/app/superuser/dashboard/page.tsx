@@ -13,9 +13,8 @@ import { resetDemoData } from "@/app/actions/client-actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createAdminUser, deleteUser } from "@/app/actions/auth-actions";
-import { generateIdForServer } from "@/lib/server-utils";
 import { getFirestore, collection, onSnapshot, QuerySnapshot, DocumentData } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -144,9 +143,12 @@ function UserList() {
             const userList = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
             setUsers(userList);
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching users:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not fetch user list."});
+        }, (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: usersRef.path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
 
