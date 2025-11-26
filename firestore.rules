@@ -4,24 +4,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // --- Funciones de Ayuda ---
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Rules for the 'companies' collection
-    // This allows any authenticated admin user to manage company settings.
+    // --- Reglas para Colecciones Principales ---
+
+    // La colección 'companies' puede ser leída y escrita por cualquier administrador autenticado.
     match /companies/{companyId} {
       allow read, write: if isSignedIn();
     }
 
-    // Rules for the 'candidates' collection and their subcollections
-    // This allows any authenticated admin user to manage all candidate data.
+    // La colección 'candidates' y todos sus documentos y subcolecciones anidadas
+    // pueden ser leídos y escritos por cualquier administrador autenticado.
+    // Esto es crucial para el funcionamiento del dashboard.
     match /candidates/{candidateId}/{documents=**} {
       allow read, write: if isSignedIn();
     }
     
-    // Fallback rule for user-specific data, if any.
+    // Regla de respaldo para datos específicos del usuario, si se añade en el futuro.
+    // Permite a un usuario modificar solo su propio documento en la colección 'users'.
     match /users/{userId}/{documents=**} {
       allow read, write: if request.auth.uid == userId;
     }

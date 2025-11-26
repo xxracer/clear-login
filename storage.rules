@@ -3,13 +3,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // The server-side code that uploads files uses the Admin SDK,
-    // which bypasses these rules. This rule is for client-side access.
-    // We allow anyone to write (upload), but only authenticated users (HR)
-    // can read (view/download) files.
+    // Permite que cualquiera suba archivos (ej. un candidato subiendo su CV).
+    // Las lecturas, sin embargo, están restringidas.
+    // Esto protege los documentos para que solo los administradores autenticados puedan verlos.
     match /{allPaths=**} {
       allow read: if request.auth != null;
-      allow write;
+      allow write: if true;
     }
   }
 }
