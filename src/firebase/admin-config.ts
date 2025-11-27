@@ -11,7 +11,6 @@ async function getFirebaseAdminApp(): Promise<App> {
   const adminApp = apps.find(app => app.name === FIREBASE_ADMIN_APP_NAME);
 
   if (adminApp) {
-    console.log('Firebase Admin SDK ya estaba inicializado.');
     return adminApp;
   }
 
@@ -21,7 +20,6 @@ async function getFirebaseAdminApp(): Promise<App> {
     };
     
     const newAdminApp = initializeApp(appOptions, FIREBASE_ADMIN_APP_NAME);
-    console.log('Firebase Admin SDK inicializado correctamente desde archivo JSON.');
     return newAdminApp;
 
   } catch (error: any) {

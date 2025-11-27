@@ -26,12 +26,23 @@ export default function SuperUserLoginPage() {
 
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // After successful login, just redirect. The dashboard will handle role checks.
-            toast({
-                title: "Login Successful",
-                description: "Redirecting to dashboard...",
-            });
-            router.push("/superuser/dashboard");
+            const idTokenResult = await userCredential.user.getIdTokenResult();
+
+            // This is the crucial check
+            if (idTokenResult.claims.superuser) {
+                toast({
+                    title: "Superuser Login Successful",
+                    description: "Redirecting to dashboard...",
+                });
+                router.push("/superuser/dashboard");
+            } else {
+                 await auth.signOut(); // Log out the user as they are not a superuser
+                 toast({
+                    variant: "destructive",
+                    title: "Access Denied",
+                    description: "You do not have superuser privileges.",
+                });
+            }
 
         } catch (error) {
              toast({
