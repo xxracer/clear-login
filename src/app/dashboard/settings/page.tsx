@@ -9,12 +9,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess, uploadCompanyLogo, deleteCompanyLogo } from "@/app/actions/company-actions";
+import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess, uploadCompanyLogo, deleteCompanyLogo, deleteCompany } from "@/app/actions/company-actions";
 import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
 import { generateIdForServer } from "@/lib/server-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
 import { generateForm } from "@/ai/flows/generate-form-flow";
@@ -54,6 +53,7 @@ function CreateAdminForm() {
             <div className="space-y-2">
                 <Label htmlFor="companyName">Company Name / ID</Label>
                 <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter new or existing company name" required />
+                 <p className="text-xs text-muted-foreground">If the company exists, the admin will be associated. If not, a new company placeholder will be created.</p>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="adminEmail">Admin Email</Label>
@@ -65,79 +65,91 @@ function CreateAdminForm() {
             </div>
             <Button type="submit" disabled={isCreating} className="w-full">
                 {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Create Company Admin
+                Create Admin
             </Button>
         </form>
     );
 }
 
 
+function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company> | null, onSave: (data: Partial<Company>, file?: File) => void, onCancel: () => void }) {
+    const [details, setDetails] = useState<Partial<Company>>(company || {});
+    const [logoFile, setLogoFile] = useState<File>();
+    const [logoPreview, setLogoPreview] = useState<string | null>(company?.logo || null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSave = () => {
+        onSave(details, logoFile);
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input id="company-name" placeholder="e.g., Acme Home Care" value={details.name || ''} onChange={(e) => setDetails(prev => ({ ...prev, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="company-logo">Company Logo</Label>
+                <div className="flex items-center gap-4">
+                    <Input id="company-logo" type="file" className="max-w-xs" onChange={handleFileChange} accept="image/*" />
+                    {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+                <Button onClick={handleSave}>
+                    <Save className="mr-2 h-4 w-4" /> Save Company
+                </Button>
+            </DialogFooter>
+        </div>
+    );
+}
+
+
+
 // Main component for the settings page
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(true); // Used for initial data load
-  const [company, setCompany] = useState<Partial<Company> | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [companies, setCompanies] = useState<Company[]>([]);
   
-  const [companyDetails, setCompanyDetails] = useState<Partial<Company>>({
-    name: '',
-    address: '',
-    phone: '',
-    fax: '',
-    email: '',
-    logo: null,
-    onboardingProcesses: []
-  });
-  const [logoFile, setLogoFile] = useState<File | undefined>();
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isCompanyFormOpen, setIsCompanyFormOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null);
 
-  const [isCompanySetupComplete, setIsCompanySetupComplete] = useState(false);
-  const [showSavedDialog, setShowSavedDialog] = useState(false);
 
-  const [isAiBuilderOpen, setIsAiBuilderOpen] = useState(false);
-  
+  const loadCompanies = async () => {
+      setIsLoading(true);
+      try {
+          const companiesData = await getCompanies();
+          setCompanies(companiesData || []);
+      } catch (error) {
+          toast({ variant: "destructive", title: "Error", description: "Could not load company data." });
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
   useEffect(() => {
-    async function loadCompanyData() {
-        setIsLoading(true);
-        try {
-            const companies = await getCompanies();
-            if (companies && companies.length > 0) {
-                const mainCompany = companies[0];
-                setCompany(mainCompany);
-                setCompanyDetails(mainCompany);
-                setLogoPreview(mainCompany.logo || null);
-                setIsCompanySetupComplete(!!mainCompany.name);
-            }
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Could not load company data." });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    loadCompanyData();
+    loadCompanies();
   }, [toast]);
 
 
-  const handleFieldChange = (field: keyof Company, value: any) => {
-    setCompanyDetails(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-    }
-  }
-  
-  const handleSaveCompany = () => {
+  const handleSaveCompany = (companyData: Partial<Company>, logoFile?: File) => {
     startTransition(async () => {
-      if (!companyDetails.name) {
+      if (!companyData.name) {
         toast({ variant: 'destructive', title: "Validation Error", description: "Company name is required." });
         return;
       }
       
-      let dataToSave = { ...companyDetails };
+      let dataToSave = { ...companyData };
       
       if (logoFile) {
         if(dataToSave.logo) {
@@ -149,54 +161,35 @@ export default function SettingsPage() {
 
       const result = await createOrUpdateCompany(dataToSave);
       if (result.success && result.company) {
-          setCompany(result.company);
-          setCompanyDetails(result.company);
-          setLogoFile(undefined);
-          setLogoPreview(result.company.logo || null);
-          setIsCompanySetupComplete(true);
-          setShowSavedDialog(true);
-          // Manually trigger a refresh of other components if needed
-          window.dispatchEvent(new Event('company-updated'));
+          toast({ title: "Company Saved", description: `${result.company.name} has been saved.` });
+          setIsCompanyFormOpen(false);
+          setEditingCompany(null);
+          loadCompanies();
       } else {
         toast({ variant: "destructive", title: "Save Failed", description: result.error || "Failed to save." });
       }
     });
   };
-
-  const handleAddNewProcess = async (name: string, fields: AiFormField[]) => {
-      if (!company?.id) return;
-      const newProcess: OnboardingProcess = {
-          id: generateIdForServer(),
-          name: name,
-          applicationForm: { id: generateIdForServer(), name: name, type: 'custom', images: [], fields: fields },
-          interviewScreen: { type: 'template' },
-          requiredDocs: [],
-      };
-      
+  
+  const handleEditCompany = (company: Company) => {
+      setEditingCompany(company);
+      setIsCompanyFormOpen(true);
+  }
+  
+  const handleAddNewCompany = () => {
+      setEditingCompany(null);
+      setIsCompanyFormOpen(true);
+  }
+  
+  const handleDeleteCompany = (companyId: string) => {
       startTransition(async () => {
-          const result = await addOnboardingProcess(company.id!, newProcess);
-          if (result.success && result.company) {
-              setCompany(result.company);
-              toast({ title: "Process Added", description: `"${name}" has been saved.` });
-          } else {
-              toast({ variant: 'destructive', title: 'Save Failed', description: result.error });
-          }
+          await deleteCompany(companyId);
+          toast({ title: "Company Deleted", description: "The company has been removed."});
+          loadCompanies();
       });
-  };
+  }
 
-  const handleDeleteProcess = (processId: string) => {
-      if (!company?.id) return;
-      startTransition(async () => {
-          const result = await deleteOnboardingProcess(company.id!, processId);
-          if (result.success && result.company) {
-              setCompany(result.company);
-              toast({ title: "Process Deleted", description: `The onboarding process has been removed.` });
-          } else {
-              toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
-          }
-      });
-  };
-    
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
@@ -207,27 +200,11 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2">
             <Settings className="h-8 w-8 text-foreground" />
             <div>
-                <h1 className="text-3xl font-headline font-bold text-foreground"> Company Settings</h1>
-                <p className="text-muted-foreground">Manage company profile and onboarding processes.</p>
+                <h1 className="text-3xl font-headline font-bold text-foreground">Settings</h1>
+                <p className="text-muted-foreground">Manage companies, users, and onboarding workflows.</p>
             </div>
             </div>
-            {isCompanySetupComplete && (
-                <div className="flex items-center gap-2">
-                    <div className="text-sm font-semibold bg-green-100 text-green-800 px-3 py-1 rounded-full dark:bg-green-900/30 dark:text-green-300">
-                        ✓ Company Setup Complete
-                    </div>
-                </div>
-            )}
         </div>
-      
-        {!isCompanySetupComplete && (
-             <Alert className="border-primary">
-                <AlertTitle className="font-bold flex items-center gap-2">Finish Your Company Setup</AlertTitle>
-                <AlertDescription>
-                   Before building workflows, please complete your company profile below.
-                </AlertDescription>
-            </Alert>
-        )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -235,173 +212,97 @@ export default function SettingsPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Building className="h-5 w-5" />
-                        <CardTitle className="text-xl">Company Profile</CardTitle>
+                        <CardTitle className="text-xl">Manage Companies</CardTitle>
                     </div>
+                     <Dialog open={isCompanyFormOpen} onOpenChange={setIsCompanyFormOpen}>
+                        <DialogTrigger asChild>
+                           <Button onClick={handleAddNewCompany}><PlusCircle className="mr-2 h-4 w-4" /> Add New Company</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{editingCompany ? 'Edit Company' : 'Add New Company'}</DialogTitle>
+                                <DialogDescription>Fill in the details for the company.</DialogDescription>
+                            </DialogHeader>
+                            <CompanyForm 
+                                company={editingCompany} 
+                                onSave={handleSaveCompany} 
+                                onCancel={() => { setIsCompanyFormOpen(false); setEditingCompany(null); }}
+                            />
+                        </DialogContent>
+                    </Dialog>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="company-name">Company Name</Label>
-                        <Input id="company-name" placeholder="e.g., Acme Home Care" value={companyDetails.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="company-address">Address</Label>
-                        <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={companyDetails.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="company-phone">Phone Number</Label>
-                            <Input id="company-phone" placeholder="(555) 123-4567" value={companyDetails.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="company-fax">Fax</Label>
-                            <Input id="company-fax" placeholder="(555) 123-4568" value={companyDetails.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="company-email">Company Email</Label>
-                        <Input id="company-email" type="email" placeholder="contact@acme.com" value={companyDetails.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="company-logo">Company Logo</Label>
-                        <div className="flex items-center gap-4">
-                            <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
-                            {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
-                        </div>
-                    </div>
-                    <div className="mt-6 flex justify-end">
-                        <Button size="lg" disabled={isPending} onClick={handleSaveCompany}>
-                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        {isCompanySetupComplete ? 'Update Company Details' : 'Save Company & Continue'}
-                        </Button>
-                    </div>
+                <CardContent className="space-y-2">
+                    {companies.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">No companies created yet. Click "Add New Company" to start.</p>
+                    ) : (
+                        companies.map(company => (
+                             <div key={company.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                                <div className="flex items-center gap-3">
+                                    {company.logo ? (
+                                        <Image src={company.logo} alt={`${company.name} logo`} width={32} height={32} className="rounded-sm object-contain" />
+                                    ) : (
+                                        <div className="h-8 w-8 rounded-sm bg-muted flex items-center justify-center text-muted-foreground"><Building className="h-4 w-4" /></div>
+                                    )}
+                                    <span className="font-semibold">{company.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleEditCompany(company)}>
+                                        <Edit className="mr-2 h-4 w-4" /> Edit
+                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete {company.name} and all associated data.</AlertDialogDescription></AlertDialogHeader>
+                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteCompany(company.id!)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                             </div>
+                        ))
+                    )}
                 </CardContent>
             </Card>
-        </div>
-        <div>
+
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-2">
-                        <Shield className="h-5 w-5" />
-                        <CardTitle className="text-xl">Superuser: User Management</CardTitle>
+                        <UserPlus className="h-5 w-5" />
+                        <CardTitle className="text-xl">Create Company Admin</CardTitle>
                     </div>
-                    <CardDescription>Create new admin users for companies.</CardDescription>
+                    <CardDescription>Create a new user account for a company administrator.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <CreateAdminForm />
                 </CardContent>
             </Card>
+
+        </div>
+        <div className="lg:col-span-1">
+             <Card className="opacity-50 pointer-events-none">
+                 <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Workflow className="h-5 w-5" />
+                        <CardTitle className="text-xl">Onboarding Workflows</CardTitle>
+                    </div>
+                     <CardDescription>
+                        Build and manage repeatable onboarding processes. (Coming Soon)
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground mb-4">You don’t have any workflows yet.</p>
+                        <Button disabled>
+                            <PlusCircle className="mr-2 h-4 w-4"/>
+                            Create New Workflow
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
       </div>
-
-
-    <div className={cn(!isCompanySetupComplete && "opacity-50 pointer-events-none")}>
-        <Card>
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <Workflow className="h-5 w-5" />
-                    <CardTitle className="text-xl">Onboarding Workflows</CardTitle>
-                </div>
-                <CardDescription>
-                    Build and manage repeatable onboarding processes for different positions.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {(!company?.onboardingProcesses || company.onboardingProcesses.length === 0) ? (
-                    <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground mb-4">You don’t have any onboarding workflows yet.</p>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                 <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Create New Workflow
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
-                                <p>The workflow builder is coming soon.</p>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <div className="flex justify-end">
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button>
-                                        <PlusCircle className="mr-2 h-4 w-4"/>
-                                        Create New Workflow
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
-                                    <p>The workflow builder is coming soon.</p>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                        <div className="border rounded-lg">
-                            {company.onboardingProcesses.map(process => (
-                                <div key={process.id} className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
-                                    <div>
-                                        <p className="font-semibold">{process.name}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Last Updated: {new Date().toLocaleDateString()} | 
-                                            Status: <span className="text-green-600">Active</span>
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/>Edit</Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
-                                                <p>Editing workflows is coming soon.</p>
-                                            </DialogContent>
-                                        </Dialog>
-                                         <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="sm" disabled={isPending}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action cannot be undone. This will permanently delete the "{process.name}" onboarding process.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDeleteProcess(process.id)}>Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-      </div>
-
-
-      <AlertDialog open={showSavedDialog} onOpenChange={setShowSavedDialog}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Settings Saved</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Company details have been updated.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setShowSavedDialog(false)}>OK</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
+
+
+    
