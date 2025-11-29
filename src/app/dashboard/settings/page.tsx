@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +10,47 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
 import { getCompanies, createOrUpdateCompany, deleteCompany } from "@/app/actions/company-actions";
-import { type Company } from "@/lib/company-schemas";
+import { type Company, OnboardingProcess } from "@/lib/company-schemas";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { createAdminUser } from "@/app/actions/auth-actions";
 import { WorkflowBuilderDialog } from "@/components/dashboard/settings/workflow-builder-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const allPermissions = {
+  manageCandidates: {
+    id: "manageCandidates",
+    label: "Manage candidates and employees",
+    description: "View, review, and advance candidates through the onboarding pipeline.",
+  },
+  manageDocuments: {
+    id: "manageDocuments",
+    label: "Upload and manage employee documentation",
+    description: "Add or remove documents from employee profiles.",
+  },
+  accessDashboard: {
+    id: "accessDashboard",
+    label: "Access the main dashboard",
+    description: "View the company's main dashboard and metrics.",
+  },
+  manageWorkflows: {
+    id: "manageWorkflows",
+    label: "Create and manage onboarding workflows",
+    description: "Build or edit onboarding processes for different roles.",
+  },
+  manageSettings: {
+    id: "manageSettings",
+    label: "Access and edit company-specific settings",
+    description: "Change company name, logo, and other branding.",
+  },
+};
+
+const rolePermissions: Record<string, (keyof typeof allPermissions)[]> = {
+  admin: ["manageCandidates", "manageDocuments", "accessDashboard", "manageWorkflows", "manageSettings"],
+  "hiring-manager": ["manageCandidates", "manageDocuments", "accessDashboard"],
+};
+
 
 function CreateAdminForm() {
     const { toast } = useToast();
@@ -25,7 +59,23 @@ function CreateAdminForm() {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('admin');
     const [isCreating, setIsCreating] = useState(false);
+    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(rolePermissions.admin);
 
+    useEffect(() => {
+      // When the role changes, update the selected permissions based on the template
+      setSelectedPermissions(rolePermissions[role] || []);
+    }, [role]);
+
+    const handlePermissionChange = (permissionId: string, checked: boolean) => {
+      setSelectedPermissions(prev => {
+        if (checked) {
+          return [...prev, permissionId];
+        } else {
+          return prev.filter(id => id !== permissionId);
+        }
+      });
+    };
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!companyName || !email || !password) {
@@ -33,7 +83,7 @@ function CreateAdminForm() {
             return;
         }
         setIsCreating(true);
-        // We can pass the role to createAdminUser if that function is updated to handle it
+        // In a real scenario, you'd pass the `selectedPermissions` array to the server action.
         const result = await createAdminUser(email, password, companyName);
         setIsCreating(false);
 
@@ -46,22 +96,6 @@ function CreateAdminForm() {
             toast({ variant: "destructive", title: "Creation Failed", description: result.error });
         }
     };
-    
-    const permissions = {
-        admin: [
-            "Manage candidates and employees for their assigned company.",
-            "View, review, and advance candidates through the onboarding pipeline.",
-            "Upload and manage employee documentation.",
-            "Access the main dashboard and company-specific settings.",
-            "Create and manage onboarding workflows.",
-        ],
-        'hiring-manager': [
-            "View and manage assigned candidates.",
-            "Advance candidates through the interview and documentation phases.",
-            "Cannot access company-wide settings or billing.",
-            "Cannot create or manage other users.",
-        ]
-    }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +114,7 @@ function CreateAdminForm() {
                     <Input id="initialPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label htmlFor="role">Role Template</Label>
                     <Select value={role} onValueChange={setRole}>
                         <SelectTrigger id="role">
                             <SelectValue placeholder="Select a role" />
@@ -92,11 +126,28 @@ function CreateAdminForm() {
                     </Select>
                 </div>
             </div>
-            <div className="mt-4 space-y-2 rounded-md border bg-muted/50 p-4">
-                <h4 className="font-medium text-sm text-foreground">Permissions for {role === 'admin' ? 'Admin' : 'Hiring Manager'}:</h4>
-                <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
-                    {(permissions[role as keyof typeof permissions] || []).map((perm, i) => <li key={i}>{perm}</li>)}
-                </ul>
+            <div className="mt-4 space-y-4 rounded-md border bg-muted/50 p-4">
+                <h4 className="font-medium text-sm text-foreground">Permissions</h4>
+                <p className="text-xs text-muted-foreground">Select the permissions this user will have. Choosing a role template provides a starting point.</p>
+                <div className="space-y-3">
+                  {Object.values(allPermissions).map((perm) => (
+                      <div key={perm.id} className="flex items-start space-x-3">
+                        <Checkbox 
+                          id={perm.id}
+                          checked={selectedPermissions.includes(perm.id)}
+                          onCheckedChange={(checked) => handlePermissionChange(perm.id, !!checked)}
+                        />
+                        <div className="grid gap-1.5 leading-none">
+                           <label htmlFor={perm.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {perm.label}
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            {perm.description}
+                          </p>
+                        </div>
+                      </div>
+                  ))}
+                </div>
             </div>
             <Button type="submit" disabled={isCreating} className="w-full">
                 {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
@@ -109,9 +160,25 @@ function CreateAdminForm() {
 
 function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company> | null, onSave: (data: Partial<Company>) => void, onCancel: () => void }) {
     const [details, setDetails] = useState<Partial<Company>>(company || {});
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null | undefined>(company?.logo);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleSave = () => {
-        onSave(details);
+        const dataToSave = {
+            ...details,
+            // In a real implementation, the file would be uploaded and the URL returned
+            // For now, we just pass the preview URL for display
+            logo: logoPreview,
+        };
+        onSave(dataToSave);
     };
 
     return (
@@ -123,8 +190,8 @@ function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company>
              <div className="space-y-2">
                 <Label htmlFor="company-logo">Company Logo</Label>
                  <div className="flex items-center gap-4">
-                    <Input id="company-logo" type="file" className="max-w-xs" accept="image/*" />
-                    {details.logo && <Image src={details.logo} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                    <Input id="company-logo" type="file" className="max-w-xs" accept="image/*" onChange={handleFileChange} />
+                    {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
                 </div>
             </div>
             <DialogFooter>
@@ -202,7 +269,6 @@ export default function SettingsPage() {
           loadCompanies();
       });
   }
-
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -282,7 +348,7 @@ export default function SettingsPage() {
                         <UserPlus className="h-5 w-5" />
                         <CardTitle className="text-xl">Create Company Admin</CardTitle>
                     </div>
-                    <CardDescription>Create a new user account for a company administrator.</CardDescription>
+                    <CardDescription>Create a new user account and assign granular permissions for a specific company.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <CreateAdminForm />
@@ -318,3 +384,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
