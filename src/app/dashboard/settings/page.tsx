@@ -1,25 +1,19 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info, ArrowRight, Link as LinkIcon, File as FileIcon, UserPlus, Shield } from "lucide-react";
+import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, UserPlus, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
-import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess, uploadCompanyLogo, deleteCompanyLogo, deleteCompany } from "@/app/actions/company-actions";
-import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
-import { generateIdForServer } from "@/lib/server-utils";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getCompanies, createOrUpdateCompany, deleteCompany } from "@/app/actions/company-actions";
+import { type Company } from "@/lib/company-schemas";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
-import { generateForm } from "@/ai/flows/generate-form-flow";
-import { cn } from "@/lib/utils";
 import { createAdminUser } from "@/app/actions/auth-actions";
-
+import { WorkflowBuilderDialog } from "@/components/dashboard/settings/workflow-builder-dialog";
 
 function CreateAdminForm() {
     const { toast } = useToast();
@@ -59,11 +53,20 @@ function CreateAdminForm() {
                 <Label htmlFor="adminEmail">Admin Email</Label>
                 <Input id="adminEmail" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@newclient.com" required />
             </div>
-            <div className="space-y-2">
-                <Label htmlFor="initialPassword">Initial Password</Label>
-                <Input id="initialPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="initialPassword">Initial Password</Label>
+                    <Input id="initialPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Input id="role" value="Admin" disabled />
+                </div>
             </div>
-            <Button type="submit" disabled={isCreating} className="w-full">
+             <p className="text-xs text-muted-foreground">
+                This will create an administrator account for the specified company. This user will have full access to manage that company's candidates, employees, and settings.
+            </p>
+            <Button type="submit" disabled={isCreating}>
                 {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                 Create Admin
             </Button>
@@ -72,21 +75,11 @@ function CreateAdminForm() {
 }
 
 
-function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company> | null, onSave: (data: Partial<Company>, file?: File) => void, onCancel: () => void }) {
+function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company> | null, onSave: (data: Partial<Company>) => void, onCancel: () => void }) {
     const [details, setDetails] = useState<Partial<Company>>(company || {});
-    const [logoFile, setLogoFile] = useState<File>();
-    const [logoPreview, setLogoPreview] = useState<string | null>(company?.logo || null);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setLogoFile(file);
-            setLogoPreview(URL.createObjectURL(file));
-        }
-    };
 
     const handleSave = () => {
-        onSave(details, logoFile);
+        onSave(details);
     };
 
     return (
@@ -95,11 +88,11 @@ function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company>
                 <Label htmlFor="company-name">Company Name</Label>
                 <Input id="company-name" placeholder="e.g., Acme Home Care" value={details.name || ''} onChange={(e) => setDetails(prev => ({ ...prev, name: e.target.value }))} />
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
                 <Label htmlFor="company-logo">Company Logo</Label>
-                <div className="flex items-center gap-4">
-                    <Input id="company-logo" type="file" className="max-w-xs" onChange={handleFileChange} accept="image/*" />
-                    {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                 <div className="flex items-center gap-4">
+                    <Input id="company-logo" type="file" className="max-w-xs" accept="image/*" />
+                    {details.logo && <Image src={details.logo} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
                 </div>
             </div>
             <DialogFooter>
@@ -112,8 +105,6 @@ function CompanyForm({ company, onSave, onCancel }: { company?: Partial<Company>
     );
 }
 
-
-
 // Main component for the settings page
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -122,6 +113,7 @@ export default function SettingsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   
   const [isCompanyFormOpen, setIsCompanyFormOpen] = useState(false);
+  const [isWorkflowBuilderOpen, setIsWorkflowBuilderOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null);
 
 
@@ -142,24 +134,14 @@ export default function SettingsPage() {
   }, [toast]);
 
 
-  const handleSaveCompany = (companyData: Partial<Company>, logoFile?: File) => {
+  const handleSaveCompany = (companyData: Partial<Company>) => {
     startTransition(async () => {
       if (!companyData.name) {
         toast({ variant: 'destructive', title: "Validation Error", description: "Company name is required." });
         return;
       }
       
-      let dataToSave = { ...companyData };
-      
-      if (logoFile) {
-        if(dataToSave.logo) {
-            await deleteCompanyLogo(dataToSave.logo);
-        }
-        const newLogoUrl = await uploadCompanyLogo(logoFile);
-        dataToSave.logo = newLogoUrl;
-      }
-
-      const result = await createOrUpdateCompany(dataToSave);
+      const result = await createOrUpdateCompany(companyData);
       if (result.success && result.company) {
           toast({ title: "Company Saved", description: `${result.company.name} has been saved.` });
           setIsCompanyFormOpen(false);
@@ -288,7 +270,7 @@ export default function SettingsPage() {
                 <CardContent>
                      <div className="text-center p-8 border-2 border-dashed rounded-lg">
                         <p className="text-muted-foreground mb-4">You don’t have any workflows yet.</p>
-                        <Button>
+                        <Button onClick={() => setIsWorkflowBuilderOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4"/>
                             Create New Workflow
                         </Button>
@@ -296,6 +278,11 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
+
+        <WorkflowBuilderDialog 
+            isOpen={isWorkflowBuilderOpen}
+            onOpenChange={setIsWorkflowBuilderOpen}
+        />
     </div>
   );
 }
