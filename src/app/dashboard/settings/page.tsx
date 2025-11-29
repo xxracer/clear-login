@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,12 +64,21 @@ function CreateAdminForm() {
                     <Input id="role" value="Admin" disabled />
                 </div>
             </div>
-             <p className="text-xs text-muted-foreground">
+            <div className="mt-4 space-y-2 rounded-md border bg-muted/50 p-4">
+                <h4 className="font-medium text-sm text-foreground">Admin Permissions:</h4>
+                <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
+                    <li>Manage candidates and employees for their assigned company.</li>
+                    <li>View, review, and advance candidates through the onboarding pipeline.</li>
+                    <li>Upload and manage employee documentation.</li>
+                    <li>Access the main dashboard and company-specific settings.</li>
+                </ul>
+            </div>
+            <p className="text-xs text-muted-foreground pt-2">
                 This will create an administrator account for the specified company. This user will have full access to manage that company's candidates, employees, and settings.
             </p>
-            <Button type="submit" disabled={isCreating}>
+            <Button type="submit" disabled={isCreating} className="w-full">
                 {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Create Admin
+                Create Admin User
             </Button>
         </form>
     );
@@ -131,7 +141,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadCompanies();
-  }, [toast]);
+  }, []);
 
 
   const handleSaveCompany = (companyData: Partial<Company>) => {
