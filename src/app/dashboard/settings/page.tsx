@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +16,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { createAdminUser } from "@/app/actions/auth-actions";
 import { WorkflowBuilderDialog } from "@/components/dashboard/settings/workflow-builder-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function CreateAdminForm() {
     const { toast } = useToast();
     const [companyName, setCompanyName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('admin');
     const [isCreating, setIsCreating] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -30,11 +33,12 @@ function CreateAdminForm() {
             return;
         }
         setIsCreating(true);
+        // We can pass the role to createAdminUser if that function is updated to handle it
         const result = await createAdminUser(email, password, companyName);
         setIsCreating(false);
 
         if (result.success) {
-            toast({ title: "Admin Created", description: `User ${email} for ${companyName} created.` });
+            toast({ title: "User Created", description: `User ${email} for ${companyName} created with role ${role}.` });
             setCompanyName('');
             setEmail('');
             setPassword('');
@@ -43,6 +47,22 @@ function CreateAdminForm() {
         }
     };
     
+    const permissions = {
+        admin: [
+            "Manage candidates and employees for their assigned company.",
+            "View, review, and advance candidates through the onboarding pipeline.",
+            "Upload and manage employee documentation.",
+            "Access the main dashboard and company-specific settings.",
+            "Create and manage onboarding workflows.",
+        ],
+        'hiring-manager': [
+            "View and manage assigned candidates.",
+            "Advance candidates through the interview and documentation phases.",
+            "Cannot access company-wide settings or billing.",
+            "Cannot create or manage other users.",
+        ]
+    }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -61,24 +81,26 @@ function CreateAdminForm() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Input id="role" value="Admin" disabled />
+                    <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger id="role">
+                            <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="hiring-manager">Hiring Manager</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
             <div className="mt-4 space-y-2 rounded-md border bg-muted/50 p-4">
-                <h4 className="font-medium text-sm text-foreground">Admin Permissions:</h4>
+                <h4 className="font-medium text-sm text-foreground">Permissions for {role === 'admin' ? 'Admin' : 'Hiring Manager'}:</h4>
                 <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-1">
-                    <li>Manage candidates and employees for their assigned company.</li>
-                    <li>View, review, and advance candidates through the onboarding pipeline.</li>
-                    <li>Upload and manage employee documentation.</li>
-                    <li>Access the main dashboard and company-specific settings.</li>
+                    {(permissions[role as keyof typeof permissions] || []).map((perm, i) => <li key={i}>{perm}</li>)}
                 </ul>
             </div>
-            <p className="text-xs text-muted-foreground pt-2">
-                This will create an administrator account for the specified company. This user will have full access to manage that company's candidates, employees, and settings.
-            </p>
             <Button type="submit" disabled={isCreating} className="w-full">
                 {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                Create Admin User
+                Create User
             </Button>
         </form>
     );
