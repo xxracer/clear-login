@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info, ArrowRight, Link as LinkIcon, File as FileIcon } from "lucide-react";
+import { Settings, Building, Save, PlusCircle, Trash2, Loader2, Workflow, Edit, Upload, Wand2, Library, Eye, Info, ArrowRight, Link as LinkIcon, File as FileIcon, UserPlus, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,57 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
 import { generateForm } from "@/ai/flows/generate-form-flow";
 import { cn } from "@/lib/utils";
+import { createAdminUser } from "@/app/actions/auth-actions";
+
+
+function CreateAdminForm() {
+    const { toast } = useToast();
+    const [companyName, setCompanyName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!companyName || !email || !password) {
+            toast({ variant: "destructive", title: "Missing fields", description: "Please fill all required fields." });
+            return;
+        }
+        setIsCreating(true);
+        const result = await createAdminUser(email, password, companyName);
+        setIsCreating(false);
+
+        if (result.success) {
+            toast({ title: "Admin Created", description: `User ${email} for ${companyName} created.` });
+            setCompanyName('');
+            setEmail('');
+            setPassword('');
+        } else {
+            toast({ variant: "destructive", title: "Creation Failed", description: result.error });
+        }
+    };
+    
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name / ID</Label>
+                <Input id="companyName" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter new or existing company name" required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="adminEmail">Admin Email</Label>
+                <Input id="adminEmail" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@newclient.com" required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="initialPassword">Initial Password</Label>
+                <Input id="initialPassword" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" disabled={isCreating} className="w-full">
+                {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                Create Company Admin
+            </Button>
+        </form>
+    );
+}
 
 
 // Main component for the settings page
@@ -178,59 +228,71 @@ export default function SettingsPage() {
                 </AlertDescription>
             </Alert>
         )}
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Building className="h-5 w-5" />
+                        <CardTitle className="text-xl">Company Profile</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="company-name">Company Name</Label>
+                        <Input id="company-name" placeholder="e.g., Acme Home Care" value={companyDetails.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="company-address">Address</Label>
+                        <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={companyDetails.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="company-phone">Phone Number</Label>
+                            <Input id="company-phone" placeholder="(555) 123-4567" value={companyDetails.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="company-fax">Fax</Label>
+                            <Input id="company-fax" placeholder="(555) 123-4568" value={companyDetails.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="company-email">Company Email</Label>
+                        <Input id="company-email" type="email" placeholder="contact@acme.com" value={companyDetails.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="company-logo">Company Logo</Label>
+                        <div className="flex items-center gap-4">
+                            <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
+                            {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <Button size="lg" disabled={isPending} onClick={handleSaveCompany}>
+                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isCompanySetupComplete ? 'Update Company Details' : 'Save Company & Continue'}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+        <div>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        <CardTitle className="text-xl">Superuser: User Management</CardTitle>
+                    </div>
+                    <CardDescription>Create new admin users for companies.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CreateAdminForm />
+                </CardContent>
+            </Card>
+        </div>
+      </div>
 
-      <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  <CardTitle className="text-xl">Company Details</CardTitle>
-              </div>
-          </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input id="company-name" placeholder="e.g., Acme Home Care" value={companyDetails.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-address">Address</Label>
-                <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={companyDetails.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="company-phone">Phone Number</Label>
-                    <Input id="company-phone" placeholder="(555) 123-4567" value={companyDetails.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
-                </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="company-fax">Fax</Label>
-                    <Input id="company-fax" placeholder="(555) 123-4568" value={companyDetails.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-email">Company Email</Label>
-                <Input id="company-email" type="email" placeholder="contact@acme.com" value={companyDetails.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                  <Label htmlFor="company-logo">Company Logo</Label>
-                  <div className="flex items-center gap-4">
-                      <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
-                      {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
-                  </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-center rounded-md border p-4 bg-muted/30">
-               <p className="text-sm text-muted-foreground text-center">User management will be available in a future update.</p>
-            </div>
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button size="lg" disabled={isPending} onClick={handleSaveCompany}>
-              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              {isCompanySetupComplete ? 'Update Company Details' : 'Save Company & Continue'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
     <div className={cn(!isCompanySetupComplete && "opacity-50 pointer-events-none")}>
         <Card>
@@ -343,4 +405,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
