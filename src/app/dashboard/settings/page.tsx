@@ -13,13 +13,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { getCompanies, createOrUpdateCompany, addOnboardingProcess, deleteOnboardingProcess, uploadCompanyLogo, deleteCompanyLogo } from "@/app/actions/company-actions";
 import { type Company, type OnboardingProcess, requiredDocSchema, type RequiredDoc, type ApplicationForm as AppFormType, AiFormField } from "@/lib/company-schemas";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { generateIdForServer } from "@/lib/server-utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AiFormBuilderDialog } from "@/components/dashboard/settings/ai-form-builder-dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { generateForm } from "@/ai/flows/generate-form-flow";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +26,7 @@ import { cn } from "@/lib/utils";
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(true); // Used for initial data load and local loading like AI generation
+  const [isLoading, setIsLoading] = useState(true); // Used for initial data load
   const [company, setCompany] = useState<Partial<Company> | null>(null);
   
   const [companyDetails, setCompanyDetails] = useState<Partial<Company>>({
@@ -48,9 +46,6 @@ export default function SettingsPage() {
 
   const [isAiBuilderOpen, setIsAiBuilderOpen] = useState(false);
   
-  const [isComingSoonOpen, setComingSoonOpen] = useState(false);
-  const [isAiCreateInfoOpen, setIsAiCreateInfoOpen] = useState(false);
-
   useEffect(() => {
     async function loadCompanyData() {
         setIsLoading(true);
@@ -61,7 +56,7 @@ export default function SettingsPage() {
                 setCompany(mainCompany);
                 setCompanyDetails(mainCompany);
                 setLogoPreview(mainCompany.logo || null);
-                setIsCompanySetupComplete(true);
+                setIsCompanySetupComplete(!!mainCompany.name);
             }
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not load company data." });
@@ -85,33 +80,6 @@ export default function SettingsPage() {
     }
   }
   
-    const handleAddNewProcess = async (name: string, fields: AiFormField[]) => {
-      if (!company?.id) {
-          toast({ variant: 'destructive', title: 'Error', description: 'Company must be saved before adding a process. Please fill out the company details and click "Save Company & Continue".' });
-          return;
-      }
-      const newProcess: OnboardingProcess = {
-          id: generateIdForServer(),
-          name: name,
-          applicationForm: { id: generateIdForServer(), name: name, type: 'custom', images: [], fields: fields },
-          interviewScreen: { type: 'template' },
-          requiredDocs: [],
-      };
-      
-      startTransition(async () => {
-          const result = await addOnboardingProcess(company.id!, newProcess);
-          if (result.success && result.company) {
-              setCompany(result.company);
-              toast({
-                  title: "Process Added",
-                  description: `"${name}" has been saved.`
-              });
-          } else {
-              toast({ variant: 'destructive', title: 'Save Failed', description: result.error });
-          }
-      });
-  };
-
   const handleSaveCompany = () => {
     startTransition(async () => {
       if (!companyDetails.name) {
@@ -137,27 +105,47 @@ export default function SettingsPage() {
           setLogoPreview(result.company.logo || null);
           setIsCompanySetupComplete(true);
           setShowSavedDialog(true);
+          // Manually trigger a refresh of other components if needed
+          window.dispatchEvent(new Event('company-updated'));
       } else {
         toast({ variant: "destructive", title: "Save Failed", description: result.error || "Failed to save." });
       }
     });
   };
 
-    const handleDeleteProcess = (processId: string) => {
-        if (!company?.id) return;
-        startTransition(async () => {
-            const result = await deleteOnboardingProcess(company.id!, processId);
-            if (result.success && result.company) {
-                setCompany(result.company);
-                toast({
-                    title: "Process Deleted",
-                    description: `The onboarding process has been removed.`,
-                });
-            } else {
-                toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
-            }
-        });
-    };
+  const handleAddNewProcess = async (name: string, fields: AiFormField[]) => {
+      if (!company?.id) return;
+      const newProcess: OnboardingProcess = {
+          id: generateIdForServer(),
+          name: name,
+          applicationForm: { id: generateIdForServer(), name: name, type: 'custom', images: [], fields: fields },
+          interviewScreen: { type: 'template' },
+          requiredDocs: [],
+      };
+      
+      startTransition(async () => {
+          const result = await addOnboardingProcess(company.id!, newProcess);
+          if (result.success && result.company) {
+              setCompany(result.company);
+              toast({ title: "Process Added", description: `"${name}" has been saved.` });
+          } else {
+              toast({ variant: 'destructive', title: 'Save Failed', description: result.error });
+          }
+      });
+  };
+
+  const handleDeleteProcess = (processId: string) => {
+      if (!company?.id) return;
+      startTransition(async () => {
+          const result = await deleteOnboardingProcess(company.id!, processId);
+          if (result.success && result.company) {
+              setCompany(result.company);
+              toast({ title: "Process Deleted", description: `The onboarding process has been removed.` });
+          } else {
+              toast({ variant: 'destructive', title: 'Deletion Failed', description: result.error });
+          }
+      });
+  };
     
     if (isLoading) {
         return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -165,23 +153,22 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <Settings className="h-8 w-8 text-foreground" />
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-foreground"> Company Settings</h1>
-            <p className="text-muted-foreground">Manage company profile and onboarding processes.</p>
-          </div>
-        </div>
-         {isCompanySetupComplete && (
+        <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold bg-green-100 text-green-800 px-3 py-1 rounded-full dark:bg-green-900/30 dark:text-green-300">
-                    ✓ Company Setup Complete
-                </div>
-                 <Button variant="outline" disabled><PlusCircle className="mr-2 h-4 w-4"/> Add Company</Button>
+            <Settings className="h-8 w-8 text-foreground" />
+            <div>
+                <h1 className="text-3xl font-headline font-bold text-foreground"> Company Settings</h1>
+                <p className="text-muted-foreground">Manage company profile and onboarding processes.</p>
             </div>
-        )}
-      </div>
+            </div>
+            {isCompanySetupComplete && (
+                <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold bg-green-100 text-green-800 px-3 py-1 rounded-full dark:bg-green-900/30 dark:text-green-300">
+                        ✓ Company Setup Complete
+                    </div>
+                </div>
+            )}
+        </div>
       
         {!isCompanySetupComplete && (
              <Alert className="border-primary">
@@ -200,62 +187,47 @@ export default function SettingsPage() {
               </div>
           </CardHeader>
         <CardContent>
-          <div className="border rounded-lg p-4 relative">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" placeholder="e.g., Acme Company" value={companyDetails.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input id="company-name" placeholder="e.g., Acme Home Care" value={companyDetails.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-address">Address</Label>
+                <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={companyDetails.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-phone">Phone Number</Label>
+                    <Input id="company-phone" placeholder="(555) 123-4567" value={companyDetails.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company-address">Address</Label>
-                  <Input id="company-address" placeholder="123 Main St, Anytown, USA" value={companyDetails.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="company-phone">Phone Number</Label>
-                      <Input id="company-phone" placeholder="(555) 123-4567" value={companyDetails.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
-                  </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="company-fax">Fax</Label>
-                      <Input id="company-fax" placeholder="(555) 123-4568" value={companyDetails.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company-email">Company Email</Label>
-                  <Input id="company-email" type="email" placeholder="contact@acme.com" value={companyDetails.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="company-logo">Company Logo</Label>
-                    <div className="flex items-center gap-4">
-                        <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
-                        {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="company-fax">Fax</Label>
+                    <Input id="company-fax" placeholder="(555) 123-4568" value={companyDetails.fax || ''} onChange={(e) => handleFieldChange('fax', e.target.value)} />
                 </div>
               </div>
-              <div className="space-y-4 rounded-md border p-4 bg-muted/30">
-                <h3 className="font-semibold text-foreground">Onboarding Users</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="user-name">User Name</Label>
-                  <Input id="user-name" placeholder="e.g., John Doe" disabled />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="user-role">Role</Label>
-                  <Input id="user-role" placeholder="e.g., HR Manager" disabled />
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="user-email">Email</Label>
-                  <Input id="user-email" type="email" placeholder="e.g., john.doe@company.com" disabled />
-                </div>
-                <Button className="w-full" disabled><PlusCircle className="mr-2 h-4 w-4" /> Add User</Button>
+              <div className="space-y-2">
+                <Label htmlFor="company-email">Company Email</Label>
+                <Input id="company-email" type="email" placeholder="contact@acme.com" value={companyDetails.email || ''} onChange={(e) => handleFieldChange('email', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="company-logo">Company Logo</Label>
+                  <div className="flex items-center gap-4">
+                      <Input id="company-logo" type="file" className="max-w-xs" onChange={handleLogoFileChange} accept="image/*" />
+                      {logoPreview && <Image src={logoPreview} alt="Logo Preview" width={40} height={40} className="rounded-sm object-contain" />}
+                  </div>
               </div>
             </div>
-            <div className="mt-6">
-              <Button size="lg" disabled={isPending} onClick={handleSaveCompany}>
-                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {isCompanySetupComplete ? 'Update Company Details' : 'Save Company & Continue'}
-              </Button>
+            <div className="flex items-center justify-center rounded-md border p-4 bg-muted/30">
+               <p className="text-sm text-muted-foreground text-center">User management will be available in a future update.</p>
             </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <Button size="lg" disabled={isPending} onClick={handleSaveCompany}>
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isCompanySetupComplete ? 'Update Company Details' : 'Save Company & Continue'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -275,36 +247,58 @@ export default function SettingsPage() {
                 {(!company?.onboardingProcesses || company.onboardingProcesses.length === 0) ? (
                     <div className="text-center p-8 border-2 border-dashed rounded-lg">
                         <p className="text-muted-foreground mb-4">You don’t have any onboarding workflows yet.</p>
-                        <Button onClick={() => setComingSoonOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4"/>
-                            Create New Workflow
-                        </Button>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                 <Button>
+                                    <PlusCircle className="mr-2 h-4 w-4"/>
+                                    Create New Workflow
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
+                                <p>The workflow builder is coming soon.</p>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         <div className="flex justify-end">
-                             <Button onClick={() => setComingSoonOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4"/>
-                                Create New Workflow
-                            </Button>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <PlusCircle className="mr-2 h-4 w-4"/>
+                                        Create New Workflow
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
+                                    <p>The workflow builder is coming soon.</p>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                         <div className="border rounded-lg">
                             {company.onboardingProcesses.map(process => (
-                                <div key={process.id} className="flex items-center justify-between p-3 border-b last:border-b-0">
+                                <div key={process.id} className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
                                     <div>
                                         <p className="font-semibold">{process.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            Phases: {Object.keys(process).length - 2} | 
                                             Last Updated: {new Date().toLocaleDateString()} | 
                                             Status: <span className="text-green-600">Active</span>
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Button variant="outline" size="sm" onClick={() => setComingSoonOpen(true)}><Edit className="mr-2 h-4 w-4"/>Edit</Button>
-                                        <Button variant="outline" size="sm" disabled>Duplicate</Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/>Edit</Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader><DialogTitle>Coming Soon!</DialogTitle></DialogHeader>
+                                                <p>Editing workflows is coming soon.</p>
+                                            </DialogContent>
+                                        </Dialog>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="sm">
+                                                <Button variant="destructive" size="sm" disabled={isPending}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete
                                                 </Button>
@@ -346,21 +340,7 @@ export default function SettingsPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <AlertDialog open={isComingSoonOpen} onOpenChange={setComingSoonOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Coming Soon!</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This modular workflow builder is currently under development and will be available shortly.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setComingSoonOpen(false)}>Got it!</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
     </div>
   );
 }
+
