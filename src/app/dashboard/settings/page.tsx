@@ -206,8 +206,7 @@ export default function SettingsPage() {
             </div>
         </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="w-full space-y-6">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -276,22 +275,20 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-        </div>
-        <div className="lg:col-span-1">
-             <Card className="opacity-50 pointer-events-none">
+            <Card>
                  <CardHeader>
                     <div className="flex items-center gap-2">
                         <Workflow className="h-5 w-5" />
                         <CardTitle className="text-xl">Onboarding Workflows</CardTitle>
                     </div>
                      <CardDescription>
-                        Build and manage repeatable onboarding processes. (Coming Soon)
+                        Build and manage repeatable onboarding processes for different job roles.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                      <div className="text-center p-8 border-2 border-dashed rounded-lg">
                         <p className="text-muted-foreground mb-4">You don’t have any workflows yet.</p>
-                        <Button disabled>
+                        <Button>
                             <PlusCircle className="mr-2 h-4 w-4"/>
                             Create New Workflow
                         </Button>
@@ -299,10 +296,6 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
-      </div>
     </div>
   );
 }
-
-
-    
