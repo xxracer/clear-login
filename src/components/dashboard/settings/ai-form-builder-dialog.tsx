@@ -4,11 +4,7 @@
 import { useState, useTransition } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateFormFromOptions, GenerateFormOptionsOutput } from '@/ai/flows/generate-form-from-options-flow';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -18,14 +14,42 @@ import { FormItem } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { AiFormField } from '@/lib/company-schemas';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const personalInfoOptions = [
-    { id: 'fullName', label: 'Full Name' },
-    { id: 'contactInfo', label: 'Contact Info (Phone, Email)' },
-    { id: 'address', label: 'Full Address' },
-    { id: 'dob', label: 'Date of Birth' },
-    { id: 'ssn', label: 'Social Security Number' },
+const coreFields = [
+    { id: 'fullName', label: 'Full Legal Name' },
+    { id: 'email', label: 'Email Address' },
+    { id: 'phone', label: 'Phone Number' },
+    { id: 'authToWork', label: 'Authorization to Work in the U.S.' },
+    { id: 'backgroundCheck', label: 'Background Check Consent' },
 ];
+
+const recommendedFields = [
+    { id: 'address', label: 'Address', tooltip: 'Helps verify applicant location for service areas.' },
+    { id: 'availability', label: 'Work Availability', tooltip: 'Helps match applicant availability to open shifts.' },
+    { id: 'workHistory', label: 'Previous Work Experience', tooltip: 'Provides insight into the applicant\'s job history.' },
+    { id: 'licenseInfo', label: 'Driver’s License Information', tooltip: 'Required for positions that involve driving.' },
+    { id: 'resumeUpload', label: 'Upload Resume', tooltip: 'Allows applicants to provide a detailed CV.' },
+];
+
+const jobSpecificFields = [
+     { id: 'cnaLicense', label: 'CNA Certification / License Number' },
+     { id: 'cprCert', label: 'CPR Certification Status' },
+     { id: 'tbTest', label: 'TB Test Status' },
+     { id: 'liftAbility', label: 'Physical Ability (e.g., can lift 50 lbs)' },
+]
+
+const optionalFields = [
+    { id: 'emergencyContact', label: 'Emergency Contact', tooltip: 'If included but not marked as required, applicants may leave this blank.' },
+    { id: 'references', label: 'References' },
+    { id: 'additionalQuestions', label: 'Additional Questions (short answers)' },
+    { id: 'skillsChecklist', label: 'Skills Checklist Basic Questions' },
+    { id: 'coverLetter', label: 'Cover Letter or Description field' },
+]
+
 
 type AiFormBuilderDialogProps = {
     isOpen: boolean;
@@ -40,28 +64,19 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     const [isLoading, setIsLoading] = useState(false);
     const [generatedForm, setGeneratedForm] = useState<{ name: string; date: Date; fields: GenerateFormOptionsOutput['fields'] } | null>(null);
     const [isPending, startTransition] = useTransition();
-    const [isComingSoonOpen, setComingSoonOpen] = useState(false);
 
-    // Form State
-    const [formPurpose, setFormPurpose] = useState('');
-    const [selectedPhase, setSelectedPhase] = useState('application');
-    const [selectedPersonalInfo, setSelectedPersonalInfo] = useState<string[]>(['fullName', 'contactInfo']);
-    const [includeReferences, setIncludeReferences] = useState('no');
-    const [includeEducation, setIncludeEducation] = useState('no');
-    const [includeEmploymentHistory, setIncludeEmploymentHistory] = useState('no');
-    const [includeCredentials, setIncludeCredentials] = useState('no');
+    // Form State for Step 1
+    const [recommendedFieldsState, setRecommendedFieldsState] = useState(
+        recommendedFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {})
+    );
 
     const resetForm = () => {
         setStep(1);
         setIsLoading(false);
         setGeneratedForm(null);
-        setFormPurpose('');
-        setSelectedPhase('application');
-        setSelectedPersonalInfo(['fullName', 'contactInfo']);
-        setIncludeReferences('no');
-        setIncludeEducation('no');
-        setIncludeEmploymentHistory('no');
-        setIncludeCredentials('no');
+        setRecommendedFieldsState(
+             recommendedFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {})
+        );
     };
 
     const handleOpenChange = (open: boolean) => {
@@ -72,238 +87,164 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     };
     
     const handleNextStep = () => {
-        if (selectedPhase !== 'application') {
-            setComingSoonOpen(true);
-        } else {
-            setStep(s => s + 1);
-        }
+       setStep(s => s + 1);
     };
-
 
     const handleGenerateForm = async () => {
-        if (!formPurpose) {
-            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please provide a purpose for the form.'});
-            return;
-        }
         setIsLoading(true);
-        setGeneratedForm(null);
-        try {
-            const result = await generateFormFromOptions({
-                formPurpose,
-                companyName: companyName,
-                includeLogo: false,
-                personalInfo: selectedPersonalInfo.map(id => personalInfoOptions.find(opt => opt.id === id)!.label),
-                includeReferences: includeReferences === 'yes',
-                includeEducation: includeEducation === 'yes',
-                includeEmploymentHistory: includeEmploymentHistory === 'yes',
-                includeCredentials: includeCredentials === 'yes',
-            });
-            
-            setGeneratedForm({ name: result.formName, date: new Date(), fields: result.fields });
-            toast({ title: 'Form Generated!', description: 'Your new form structure is ready to preview.' });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Generation Failed', description: (error as Error).message });
-        } finally {
+        // This is where you would eventually gather all state and call the AI flow
+        setTimeout(() => {
             setIsLoading(false);
-        }
+            setStep(3); // Move to loading screen simulation
+        }, 1000);
     };
-    
-    const handleConfirmAndSave = () => {
-        if (!generatedForm) return;
-        startTransition(async () => {
-            await onFormGenerated(generatedForm.name, generatedForm.fields);
-            handleOpenChange(false);
-        });
-    }
 
-    const renderStep = () => {
+    const renderFieldSelection = (field: {id: string, label: string, tooltip?: string}, state: any, setState: Function) => (
+        <div key={field.id} className="flex items-center justify-between p-3 border rounded-md">
+            <div className="flex items-center gap-2">
+                <Checkbox
+                    id={`include-${field.id}`}
+                    checked={state[field.id]?.included}
+                    onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], included: checked } })}
+                />
+                <Label htmlFor={`include-${field.id}`} className="font-medium">{field.label}</Label>
+                {field.tooltip && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild><HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
+                            <TooltipContent><p>{field.tooltip}</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
+            {state[field.id]?.included && (
+                <div className="flex items-center space-x-2">
+                    <Label htmlFor={`required-${field.id}`}>Required?</Label>
+                    <Switch
+                        id={`required-${field.id}`}
+                        checked={state[field.id]?.required}
+                        onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], required: checked } })}
+                    />
+                </div>
+            )}
+        </div>
+    );
+
+    const renderStepContent = () => {
         if (isLoading || isPending) {
             return (
-                <div className="flex flex-col items-center justify-center space-y-4 p-8">
+                <div className="flex flex-col items-center justify-center space-y-4 p-8 min-h-[400px]">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground">
-                        {isPending ? "Saving your form..." : "Generating your form, please wait..."}
-                    </p>
+                    <p className="text-muted-foreground">{isPending ? "Saving your form..." : "Generating your form..."}</p>
                 </div>
             );
-        }
-        
-        if (generatedForm) {
-            return (
-                 <div className="space-y-6 p-4 max-h-[70vh] overflow-y-auto">
-                    <Alert variant="default" className="border-green-500/50">
-                        <AlertTitle className="font-semibold text-green-700">Form Created Successfully!</AlertTitle>
-                        <AlertDescription>
-                            Review the preview below. If you're happy with it, click "Confirm and Save" to add it to your Form Library.
-                        </AlertDescription>
-                    </Alert>
-
-                    <div className="border rounded-lg p-4 space-y-4">
-                        <h3 className="text-lg font-semibold">{generatedForm.name}</h3>
-                        <p className="text-sm text-muted-foreground">Date: {format(generatedForm.date, 'PPP')} | Type: Custom Form</p>
-                        
-                        <div className="mt-4 pt-4 border-t space-y-4">
-                            <h4 className="font-medium">Form Preview:</h4>
-                            <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-                                {generatedForm.fields.map(field => (
-                                    <div key={field.id}>
-                                        <Label htmlFor={field.id}>{field.label}{field.required && <span className="text-destructive">*</span>}</Label>
-                                        {field.type === 'text' && <Input id={field.id} />}
-                                        {field.type === 'email' && <Input id={field.id} type="email" />}
-                                        {field.type === 'number' && <Input id={field.id} type="number" />}
-                                        {field.type === 'phone' && <Input id={field.id} type="tel" />}
-                                        {field.type === 'date' && <Input id={field.id} type="date" />}
-                                        {field.type === 'textarea' && <Textarea id={field.id} />}
-                                        {field.type === 'checkbox' && <div className="flex items-center space-x-2 pt-2"><Checkbox id={field.id} /><label htmlFor={field.id} className="text-sm font-normal">I agree</label></div>}
-                                        {field.type === 'select' && (
-                                            <Select>
-                                                <SelectTrigger id={field.id}>
-                                                    <SelectValue placeholder="Select an option" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {(field.options || []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <div className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={() => setGeneratedForm(null)}>Back to Editor</Button>
-                        <Button onClick={handleConfirmAndSave}>Confirm and Save</Button>
-                    </div>
-                </div>
-            )
         }
 
         switch (step) {
             case 1:
                 return (
-                    <div className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="formPurpose">What is the main purpose of this form? (e.g., "Driver Application", "Office Staff Onboarding")</Label>
-                            <Input id="formPurpose" value={formPurpose} onChange={(e) => setFormPurpose(e.target.value)} />
+                    <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-4">
+                        <div>
+                            <h4 className="font-semibold text-foreground">Core Required Fields</h4>
+                            <p className="text-xs text-muted-foreground">These fields are required for all ClearComply applications.</p>
+                            <div className="mt-2 space-y-2">
+                                {coreFields.map(field => (
+                                    <div key={field.id} className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                                        <div className="flex items-center gap-2">
+                                            <Checkbox id={field.id} checked disabled />
+                                            <Label htmlFor={field.id} className="font-medium text-muted-foreground">{field.label}</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Label htmlFor={`req-${field.id}`} className="text-muted-foreground">Required?</Label>
+                                            <Switch id={`req-${field.id}`} checked disabled />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="space-y-3">
-                            <Label>What part of the onboarding process is this for?</Label>
-                            <RadioGroup value={selectedPhase} onValueChange={setSelectedPhase} className="flex flex-col space-y-2">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="application" id="phase-app" /><Label htmlFor="phase-app" className="font-normal">Application Form</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="interview" id="phase-int" /><Label htmlFor="phase-int" className="font-normal">Interview Screen</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="documentation" id="phase-doc" /><Label htmlFor="phase-doc" className="font-normal">Documentation Process</Label></FormItem>
-                            </RadioGroup>
-                             <p className="text-xs text-muted-foreground">This section is for creating the form for your candidates.</p>
+
+                        <div>
+                            <h4 className="font-semibold text-foreground">Recommended Fields</h4>
+                            <div className="mt-2 space-y-2">
+                                {recommendedFields.map(field => renderFieldSelection(field, recommendedFieldsState, setRecommendedFieldsState))}
+                            </div>
+                        </div>
+
+                         <div>
+                            <h4 className="font-semibold text-foreground">Job-Type Specific Fields (e.g., for CNA)</h4>
+                             <p className="text-xs text-muted-foreground">These fields are commonly required for this position. You may include or remove them.</p>
+                            <div className="mt-2 space-y-2">
+                                {/* Placeholder for dynamic fields */}
+                                {jobSpecificFields.map(field => (
+                                    <div key={field.id} className="flex items-center justify-between p-3 border rounded-md opacity-50">
+                                        <Label className="font-medium">{field.label}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                         <div>
+                            <h4 className="font-semibold text-foreground">Optional Fields</h4>
+                            <div className="mt-2 space-y-2">
+                                 {optionalFields.map(field => (
+                                    <div key={field.id} className="flex items-center justify-between p-3 border rounded-md opacity-50">
+                                        <Label className="font-medium">{field.label}</Label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 );
             case 2:
-                return (
-                    <div className="space-y-4">
-                        <Label>Which personal data points are most important?</Label>
-                        <p className="text-sm text-muted-foreground">Select all that apply.</p>
-                        {personalInfoOptions.map(item => (
-                            <div key={item.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={item.id}
-                                    checked={selectedPersonalInfo.includes(item.id)}
-                                    onCheckedChange={(checked) => {
-                                        return checked
-                                            ? setSelectedPersonalInfo([...selectedPersonalInfo, item.id])
-                                            : setSelectedPersonalInfo(selectedPersonalInfo.filter(id => id !== item.id));
-                                    }}
-                                />
-                                <label htmlFor={item.id} className="text-sm font-medium leading-none">
-                                    {item.label}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 3:
-                return (
+                 return (
                     <div className="space-y-6">
-                        <div className="space-y-2">
-                            <Label>Do you need to include a section for personal/professional references?</Label>
-                             <RadioGroup value={includeReferences} onValueChange={setIncludeReferences} className="flex gap-4">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="ref-yes" /><Label htmlFor="ref-yes" className="ml-2 font-normal">Yes</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="ref-no" /><Label htmlFor="ref-no" className="ml-2 font-normal">No</Label></FormItem>
-                            </RadioGroup>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Do you need to add data about where the person studied?</Label>
-                             <RadioGroup value={includeEducation} onValueChange={setIncludeEducation} className="flex gap-4">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="edu-yes" /><Label htmlFor="edu-yes" className="ml-2 font-normal">Yes</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="edu-no" /><Label htmlFor="edu-no" className="ml-2 font-normal">No</Label></FormItem>
-                            </RadioGroup>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Do you need to add references from previous jobs?</Label>
-                            <RadioGroup value={includeEmploymentHistory} onValueChange={setIncludeEmploymentHistory} className="flex gap-4">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="emp-yes" /><Label htmlFor="emp-yes" className="ml-2 font-normal">Yes</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="emp-no" /><Label htmlFor="emp-no" className="ml-2 font-normal">No</Label></FormItem>
-                            </RadioGroup>
-                        </div>
-                         <div className="space-y-2">
-                            <Label>Do you need to add credentials (licenses, certifications, etc.)?</Label>
-                            <RadioGroup value={includeCredentials} onValueChange={setIncludeCredentials} className="flex gap-4">
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="yes" id="cred-yes" /><Label htmlFor="cred-yes" className="ml-2 font-normal">Yes</Label></FormItem>
-                                <FormItem className="flex items-center space-x-2"><RadioGroupItem value="no" id="cred-no" /><Label htmlFor="cred-no" className="ml-2 font-normal">No</Label></FormItem>
-                            </RadioGroup>
-                        </div>
+                        {/* Placeholder for Step 2 content */}
+                        <h3 className="font-semibold">Step 2: Custom Instructions</h3>
+                        <Textarea placeholder="Example: Make the tone friendly, add a question about preferred schedule, translate labels to Spanish, etc." rows={10} />
                     </div>
-                )
+                 )
+            // Other steps would go here
             default:
-                return null;
+                return <div>Step {step}</div>;
         }
     };
 
     return (
-        <>
-            <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>AI Form Builder</DialogTitle>
-                        {!generatedForm && <DialogDescription>
-                            Answer a few questions and the AI will generate a form structure for you. (Step {step} of 3)
-                        </DialogDescription>}
-                    </DialogHeader>
-                    
-                    <div className="py-4">
-                        {renderStep()}
-                    </div>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            <DialogContent className="sm:max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle className="font-headline text-xl">AI Application Form Wizard</DialogTitle>
+                    {step === 1 && <DialogDescription>Choose what you want to include in your job application. You can also choose which fields are required.</DialogDescription>}
+                    {step === 2 && <DialogDescription>Optional: Tell the AI how you’d like your application to sound or if you want any additional questions included.</DialogDescription>}
+                </DialogHeader>
+                
+                <div className="py-4">
+                    {renderStepContent()}
+                </div>
 
-                    {!generatedForm && (
-                        <DialogFooter>
-                            <div className="flex justify-between w-full">
-                                <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1 || isLoading}>
-                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                                </Button>
-                                {step < 3 ? (
-                                    <Button onClick={handleNextStep} disabled={isLoading}>
-                                        Next <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                ) : (
-                                    <Button onClick={handleGenerateForm} disabled={isLoading}>
-                                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        Generate Form
-                                    </Button>
-                                )}
-                            </div>
-                        </DialogFooter>
-                    )}
-                </DialogContent>
-            </Dialog>
-            <AlertDialog open={isComingSoonOpen} onOpenChange={setComingSoonOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>This feature is coming soon.</AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogAction onClick={() => setComingSoonOpen(false)}>Got it!</AlertDialogAction>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
+                <DialogFooter>
+                    <div className="flex justify-between w-full">
+                        <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1 || isLoading}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                        
+                        {step === 1 ? (
+                            <Button onClick={handleNextStep} disabled={isLoading}>
+                                Next <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : step === 2 ? (
+                            <Button onClick={handleGenerateForm} disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Generate My Application Form <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                           <Button onClick={() => { /* Placeholder for final action */ }} disabled={isLoading}>
+                                Use This Form
+                            </Button>
+                        )}
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
