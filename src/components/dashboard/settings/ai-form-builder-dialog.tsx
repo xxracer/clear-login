@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowRight, ArrowLeft, HelpCircle, Bot, Edit, RefreshCw, XCircle, Send } from 'lucide-react';
@@ -52,7 +53,7 @@ type AiFormBuilderDialogProps = {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     companyName?: string;
-    onFormGenerated: (name: string, fields: AiFormField[]) => Promise<void>;
+    onFormGenerated: (name: string, fields: AiFormField[]) => void;
 }
 
 export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormGenerated }: AiFormBuilderDialogProps) {
@@ -74,24 +75,28 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     );
     const [customInstructions, setCustomInstructions] = useState('');
     const [generationError, setGenerationError] = useState<string | null>(null);
-    const [showAiEditor, setShowAiEditor] = useState(false);
+    
+    // State for the Edit with AI dialog
+    const [isEditDialogVisible, setEditDialogVisible] = useState(false);
     const [editInstructions, setEditInstructions] = useState('');
 
 
-    const resetForm = () => {
-        setStep(1);
-        setIsLoading(false);
-        setGeneratedForm(null);
-        setGenerationError(null);
-        setShowAiEditor(false);
-        setEditInstructions('');
-        // Reset all state here
-    };
-
-    const handleOpenChange = (open: boolean) => {
-        if (!open) {
+    useEffect(() => {
+        const resetForm = () => {
+            setStep(1);
+            setIsLoading(false);
+            setGeneratedForm(null);
+            setGenerationError(null);
+            setEditInstructions('');
+            setCustomInstructions('');
+        };
+        
+        if (isOpen) {
             resetForm();
         }
+    }, [isOpen]);
+
+    const handleOpenChange = (open: boolean) => {
         onOpenChange(open);
     };
     
@@ -103,7 +108,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
         setStep(3); // Go to loading screen
         setIsLoading(true);
         setGenerationError(null);
-        setShowAiEditor(false);
         if (!regenerate) {
             setGeneratedForm(null);
         }
@@ -148,14 +152,10 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     const handleAcceptForm = async () => {
         if (!generatedForm) return;
         
-        startTransition(async () => {
-            try {
-                await onFormGenerated(generatedForm.formName, generatedForm.fields);
-                toast({ title: 'Form Saved', description: 'Your new application form has been added to the workflow.' });
-                handleOpenChange(false);
-            } catch (error) {
-                 toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the generated form.' });
-            }
+        startTransition(() => {
+            onFormGenerated(generatedForm.formName, generatedForm.fields);
+            toast({ title: 'Form Saved', description: 'Your new application form has been added to the workflow.' });
+            handleOpenChange(false);
         });
     }
 
@@ -174,13 +174,8 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
             });
 
              if (property === 'included') {
-                 // For now, we just modify the required status. A real implementation might remove the field.
-                 // This is a simplification for the UI preview.
                  if (value === false) {
                      return { ...prev, fields: newFields.filter(f => f.id !== fieldId) };
-                 } else {
-                     // This is tricky - re-adding a field would require knowing its original state.
-                     // For this prototype, we'll just focus on removal and modification.
                  }
              }
             
@@ -332,23 +327,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                                     </div>
                                 ))}
                             </div>
-                            {showAiEditor && (
-                                <div className="space-y-3 pt-4 border-t">
-                                    <h4 className="font-semibold">What would you like to change?</h4>
-                                    <Textarea
-                                        placeholder="e.g., Make the tone more formal, add a question about teamwork..."
-                                        value={editInstructions}
-                                        onChange={(e) => setEditInstructions(e.target.value)}
-                                        rows={4}
-                                    />
-                                    <div className="flex justify-end gap-2">
-                                        <Button variant="ghost" size="sm" onClick={() => setShowAiEditor(false)}>Cancel</Button>
-                                        <Button size="sm">
-                                            Apply Changes with AI <Send className="ml-2 h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 );
@@ -380,13 +358,35 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                             <XCircle className="mr-2 h-4 w-4" /> Discard and Return
                         </Button>
                         <div className="flex gap-2">
-                             <Button variant="outline" onClick={() => handleGenerateForm(true)} disabled={isPending || showAiEditor}>
+                             <Button variant="outline" onClick={() => handleGenerateForm(true)} disabled={isPending}>
                                 <RefreshCw className="mr-2 h-4 w-4" /> Try Again
                             </Button>
-                            <Button variant="secondary" onClick={() => setShowAiEditor(true)} disabled={isPending || showAiEditor}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit With AI
-                            </Button>
-                             <Button onClick={handleAcceptForm} disabled={isPending || showAiEditor}>
+                             <Dialog open={isEditDialogVisible} onOpenChange={setEditDialogVisible}>
+                                <DialogTrigger asChild>
+                                     <Button variant="secondary" disabled={isPending}>
+                                        <Edit className="mr-2 h-4 w-4" /> Edit With AI
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Edit With AI</DialogTitle>
+                                        <DialogDescription>What would you like to change?</DialogDescription>
+                                    </DialogHeader>
+                                    <Textarea
+                                        placeholder="e.g., Make the tone more formal, add a question about teamwork..."
+                                        value={editInstructions}
+                                        onChange={(e) => setEditInstructions(e.target.value)}
+                                        rows={4}
+                                    />
+                                    <DialogFooter>
+                                        <Button variant="ghost" onClick={() => setEditDialogVisible(false)}>Cancel</Button>
+                                        <Button>
+                                            Apply Changes <Send className="ml-2 h-3 w-3" />
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                             <Button onClick={handleAcceptForm} disabled={isPending}>
                                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Use This Form
                             </Button>
