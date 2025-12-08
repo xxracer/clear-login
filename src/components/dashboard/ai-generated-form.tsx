@@ -57,7 +57,9 @@ const createZodSchema = (fields: AiFormField[]) => {
                     errorMap: () => ({ message: "This field must be checked." }),
                 });
             } else if (zodField instanceof z.ZodString || zodField instanceof z.ZodNumber) {
-                 zodField = zodField.min(1, { message: "This field is required." });
+                 if (zodField instanceof z.ZodString) {
+                    zodField = zodField.min(1, { message: "This field is required." });
+                 }
             }
         } else {
             zodField = zodField.optional();
@@ -81,11 +83,30 @@ export function AiGeneratedForm({ formName, fields, companyName }: AiGeneratedFo
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // This is a safeguard. If fields is empty, zod throws an error.
+    if (!fields || fields.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>{formName}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">This form has no fields configured.</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     const formSchema = createZodSchema(fields);
     type FormSchema = z.infer<typeof formSchema>;
 
     const form = useForm<FormSchema>({
         resolver: zodResolver(formSchema),
+        defaultValues: fields.reduce((acc, field) => {
+            // @ts-ignore
+            acc[field.id] = field.type === 'checkbox' ? false : field.type === 'number' ? 0 : '';
+            return acc;
+        }, {}),
     });
 
     const onSubmit = async (data: FormSchema) => {
@@ -97,8 +118,8 @@ export function AiGeneratedForm({ formName, fields, companyName }: AiGeneratedFo
                 applyingFor: [companyName],
                 formName: formName,
                 // Add default personal info if not present, as createCandidate might expect it
-                firstName: data.firstName || data.fullName || 'N/A',
-                lastName: data.lastName || '',
+                firstName: (data as any).firstName || (data as any).fullName || 'N/A',
+                lastName: (data as any).lastName || '',
             };
 
             const result = await createCandidate(submissionData as any);
@@ -142,18 +163,18 @@ export function AiGeneratedForm({ formName, fields, companyName }: AiGeneratedFo
                             <FormField
                                 key={field.id}
                                 control={form.control}
-                                name={field.id}
+                                name={field.id as any}
                                 render={({ field: formField }) => (
                                     <FormItem>
                                         <FormLabel>{field.label}{field.required && <span className="text-destructive ml-1">*</span>}</FormLabel>
                                         <FormControl>
-                                            <>
-                                                {field.type === 'text' && <Input {...formField} />}
-                                                {field.type === 'email' && <Input type="email" {...formField} />}
-                                                {field.type === 'number' && <Input type="number" {...formField} />}
-                                                {field.type === 'phone' && <Input type="tel" {...formField} />}
-                                                {field.type === 'date' && <Input type="date" {...formField} />}
-                                                {field.type === 'textarea' && <Textarea {...formField} />}
+                                            <div>
+                                                {field.type === 'text' && <Input {...formField} value={formField.value || ''} />}
+                                                {field.type === 'email' && <Input type="email" {...formField} value={formField.value || ''} />}
+                                                {field.type === 'number' && <Input type="number" {...formField} value={formField.value || 0} />}
+                                                {field.type === 'phone' && <Input type="tel" {...formField} value={formField.value || ''} />}
+                                                {field.type === 'date' && <Input type="date" {...formField} value={formField.value || ''} />}
+                                                {field.type === 'textarea' && <Textarea {...formField} value={formField.value || ''} />}
                                                 {field.type === 'checkbox' && (
                                                      <div className="flex items-center space-x-2 pt-2">
                                                         <Checkbox id={field.id} checked={formField.value} onCheckedChange={formField.onChange} />
@@ -170,7 +191,7 @@ export function AiGeneratedForm({ formName, fields, companyName }: AiGeneratedFo
                                                         </SelectContent>
                                                     </Select>
                                                 )}
-                                            </>
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
