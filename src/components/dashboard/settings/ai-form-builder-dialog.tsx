@@ -1,23 +1,20 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowRight, ArrowLeft, HelpCircle } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, HelpCircle, Bot, Edit, RefreshCw, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateFormFromOptions, GenerateFormOptionsOutput } from '@/ai/flows/generate-form-from-options-flow';
+import { generateFormFromOptions, GenerateFormOptionsInput, GenerateFormOptionsOutput } from '@/ai/flows/generate-form-from-options-flow';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { format } from 'date-fns';
-import { FormItem } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { AiFormField } from '@/lib/company-schemas';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { AiGeneratedForm } from '@/components/dashboard/ai-generated-form';
+import { AiFormField } from '@/lib/company-schemas';
+
 
 const coreFields = [
     { id: 'fullName', label: 'Full Legal Name' },
@@ -62,21 +59,29 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [generatedForm, setGeneratedForm] = useState<{ name: string; date: Date; fields: GenerateFormOptionsOutput['fields'] } | null>(null);
+    const [generatedForm, setGeneratedForm] = useState<GenerateFormOptionsOutput | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    // Form State for Step 1
+    // Form State
     const [recommendedFieldsState, setRecommendedFieldsState] = useState(
-        recommendedFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {})
+        recommendedFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {} as Record<string, { included: boolean, required: boolean }>)
     );
+     const [jobSpecificFieldsState, setJobSpecificFieldsState] = useState(
+        jobSpecificFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {} as Record<string, { included: boolean, required: boolean }>)
+    );
+    const [optionalFieldsState, setOptionalFieldsState] = useState(
+        optionalFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: false, required: false } }), {} as Record<string, { included: boolean, required: boolean }>)
+    );
+    const [customInstructions, setCustomInstructions] = useState('');
+    const [generationError, setGenerationError] = useState<string | null>(null);
+
 
     const resetForm = () => {
         setStep(1);
         setIsLoading(false);
         setGeneratedForm(null);
-        setRecommendedFieldsState(
-             recommendedFields.reduce((acc, field) => ({ ...acc, [field.id]: { included: true, required: true } }), {})
-        );
+        setGenerationError(null);
+        // Reset all state here
     };
 
     const handleOpenChange = (open: boolean) => {
@@ -90,14 +95,94 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
        setStep(s => s + 1);
     };
 
-    const handleGenerateForm = async () => {
+    const handleGenerateForm = async (regenerate = false) => {
+        setStep(3); // Go to loading screen
         setIsLoading(true);
-        // This is where you would eventually gather all state and call the AI flow
-        setTimeout(() => {
+        setGenerationError(null);
+        if (!regenerate) {
+            setGeneratedForm(null);
+        }
+
+        try {
+            // Map selected fields to a simple array of strings for the prompt
+            const selectedFields: string[] = ['Full Legal Name', 'Email Address', 'Phone Number', 'Authorization to Work in the U.S.', 'Background Check Consent'];
+            const addSelected = (state: Record<string, { included: boolean }>, sourceFields: { id: string; label: string }[]) => {
+                for (const field of sourceFields) {
+                    if (state[field.id]?.included) {
+                        selectedFields.push(field.label);
+                    }
+                }
+            };
+            addSelected(recommendedFieldsState, recommendedFields);
+            addSelected(jobSpecificFieldsState, jobSpecificFields);
+            addSelected(optionalFieldsState, optionalFields);
+
+            const input: GenerateFormOptionsInput = {
+                formPurpose: 'Certified Nursing Assistant (CNA) Application', // Placeholder
+                companyName: companyName,
+                personalInfo: selectedFields,
+                includeReferences: optionalFieldsState['references']?.included,
+                includeEducation: true, // Assuming from work history
+                includeEmploymentHistory: recommendedFieldsState['workHistory']?.included,
+                includeCredentials: true,
+                includeLogo: false, // This is a design choice
+            };
+
+            const result = await generateFormFromOptions(input);
+            setGeneratedForm(result);
+            setStep(4);
+        } catch (e) {
+            console.error("AI Generation Error:", e);
+            setGenerationError("The AI failed to generate the form. Please try again or go back to adjust your selections.");
+            setStep(3); // Stay on loading/error screen
+        } finally {
             setIsLoading(false);
-            setStep(3); // Move to loading screen simulation
-        }, 1000);
+        }
     };
+    
+    const handleAcceptForm = async () => {
+        if (!generatedForm) return;
+        
+        startTransition(async () => {
+            try {
+                await onFormGenerated(generatedForm.formName, generatedForm.fields);
+                toast({ title: 'Form Saved', description: 'Your new application form has been added to the workflow.' });
+                handleOpenChange(false);
+            } catch (error) {
+                 toast({ variant: 'destructive', title: 'Save Failed', description: 'Could not save the generated form.' });
+            }
+        });
+    }
+
+    const handleFieldToggle = (fieldId: string, property: 'included' | 'required', value: boolean) => {
+        if (!generatedForm) return;
+
+        setGeneratedForm(prev => {
+            if (!prev) return null;
+            const newFields = prev.fields.map(f => {
+                if (f.id === fieldId) {
+                    if (property === 'required') {
+                        return { ...f, required: value };
+                    }
+                }
+                return f;
+            });
+
+             if (property === 'included') {
+                 // For now, we just modify the required status. A real implementation might remove the field.
+                 // This is a simplification for the UI preview.
+                 if (value === false) {
+                     return { ...prev, fields: newFields.filter(f => f.id !== fieldId) };
+                 } else {
+                     // This is tricky - re-adding a field would require knowing its original state.
+                     // For this prototype, we'll just focus on removal and modification.
+                 }
+             }
+            
+            return { ...prev, fields: newFields };
+        });
+    }
+
 
     const renderFieldSelection = (field: {id: string, label: string, tooltip?: string}, state: any, setState: Function) => (
         <div key={field.id} className="flex items-center justify-between p-3 border rounded-md">
@@ -105,7 +190,7 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                 <Checkbox
                     id={`include-${field.id}`}
                     checked={state[field.id]?.included}
-                    onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], included: checked } })}
+                    onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], included: !!checked } })}
                 />
                 <Label htmlFor={`include-${field.id}`} className="font-medium">{field.label}</Label>
                 {field.tooltip && (
@@ -123,7 +208,7 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                     <Switch
                         id={`required-${field.id}`}
                         checked={state[field.id]?.required}
-                        onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], required: checked } })}
+                        onCheckedChange={(checked) => setState({ ...state, [field.id]: { ...state[field.id], required: !!checked } })}
                     />
                 </div>
             )}
@@ -131,15 +216,6 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
     );
 
     const renderStepContent = () => {
-        if (isLoading || isPending) {
-            return (
-                <div className="flex flex-col items-center justify-center space-y-4 p-8 min-h-[400px]">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground">{isPending ? "Saving your form..." : "Generating your form..."}</p>
-                </div>
-            );
-        }
-
         switch (step) {
             case 1:
                 return (
@@ -165,57 +241,167 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
 
                         <div>
                             <h4 className="font-semibold text-foreground">Recommended Fields</h4>
-                            <div className="mt-2 space-y-2">
+                             <div className="mt-2 space-y-2">
                                 {recommendedFields.map(field => renderFieldSelection(field, recommendedFieldsState, setRecommendedFieldsState))}
                             </div>
                         </div>
 
                          <div>
-                            <h4 className="font-semibold text-foreground">Job-Type Specific Fields (e.g., for CNA)</h4>
+                            <h4 className="font-semibold text-foreground">Job-Type Specific Fields (CNA)</h4>
                              <p className="text-xs text-muted-foreground">These fields are commonly required for this position. You may include or remove them.</p>
                             <div className="mt-2 space-y-2">
-                                {/* Placeholder for dynamic fields */}
-                                {jobSpecificFields.map(field => (
-                                    <div key={field.id} className="flex items-center justify-between p-3 border rounded-md opacity-50">
-                                        <Label className="font-medium">{field.label}</Label>
-                                    </div>
-                                ))}
+                                {jobSpecificFields.map(field => renderFieldSelection(field, jobSpecificFieldsState, setJobSpecificFieldsState))}
                             </div>
                         </div>
 
                          <div>
                             <h4 className="font-semibold text-foreground">Optional Fields</h4>
                             <div className="mt-2 space-y-2">
-                                 {optionalFields.map(field => (
-                                    <div key={field.id} className="flex items-center justify-between p-3 border rounded-md opacity-50">
-                                        <Label className="font-medium">{field.label}</Label>
-                                    </div>
-                                ))}
+                                 {optionalFields.map(field => renderFieldSelection(field, optionalFieldsState, setOptionalFieldsState))}
                             </div>
                         </div>
                     </div>
                 );
             case 2:
                  return (
-                    <div className="space-y-6">
-                        {/* Placeholder for Step 2 content */}
-                        <h3 className="font-semibold">Step 2: Custom Instructions</h3>
-                        <Textarea placeholder="Example: Make the tone friendly, add a question about preferred schedule, translate labels to Spanish, etc." rows={10} />
+                    <div className="space-y-4">
+                         <h3 className="font-semibold">Customize Your Application</h3>
+                         <p className="text-sm text-muted-foreground">Optional: Tell the AI how you’d like your application to sound or if you want any additional questions included.</p>
+                        <Textarea 
+                            placeholder="Example: Make the tone friendly, add a question about preferred schedule, remove vaccination questions, translate labels to Spanish, etc." 
+                            rows={10} 
+                            value={customInstructions}
+                            onChange={(e) => setCustomInstructions(e.target.value)}
+                        />
                     </div>
-                 )
-            // Other steps would go here
+                 );
+            case 3: // Loading / Error screen
+                return (
+                     <div className="flex flex-col items-center justify-center space-y-4 p-8 min-h-[400px]">
+                        {generationError ? (
+                             <Alert variant="destructive">
+                                <AlertTitle>Something went wrong</AlertTitle>
+                                <AlertDescription>{generationError}</AlertDescription>
+                            </Alert>
+                        ) : (
+                            <>
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                <h3 className="font-semibold">Building your custom job application…</h3>
+                                <p className="text-muted-foreground text-sm text-center">We’re adding your selected fields, applying your custom instructions, and formatting everything for applicants.</p>
+                            </>
+                        )}
+                    </div>
+                );
+            case 4: // Preview screen
+                if (!generatedForm) return null;
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Left Side - Preview */}
+                        <div className="h-[65vh] overflow-y-auto border rounded-lg p-4 bg-muted/30">
+                           <h3 className="font-semibold text-lg mb-2">Application Preview</h3>
+                           <div className="pointer-events-none scale-95 origin-top-left">
+                                <AiGeneratedForm 
+                                    formName={generatedForm.formName}
+                                    fields={generatedForm.fields}
+                                    companyName={companyName || 'Your Company'}
+                                />
+                           </div>
+                        </div>
+
+                        {/* Right Side - Controls */}
+                        <div className="space-y-4 h-[65vh] overflow-y-auto pr-2">
+                             <h3 className="font-semibold text-lg">Included Fields</h3>
+                             <p className="text-sm text-muted-foreground">You may turn fields on or off or change whether they are required. These changes update instantly.</p>
+                            <div className="space-y-2">
+                                {generatedForm.fields.map(field => (
+                                     <div key={field.id} className="flex items-center justify-between p-3 border rounded-md">
+                                        <Label htmlFor={`field-toggle-${field.id}`} className="font-medium">{field.label}</Label>
+                                        <div className="flex items-center space-x-2">
+                                            <Label htmlFor={`required-toggle-${field.id}`}>Required</Label>
+                                            <Switch
+                                                id={`required-toggle-${field.id}`}
+                                                checked={field.required}
+                                                onCheckedChange={(checked) => handleFieldToggle(field.id, 'required', checked)}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
             default:
                 return <div>Step {step}</div>;
         }
     };
+    
+    const renderFooter = () => {
+         if (step === 3 && generationError) { // Error state on loading screen
+             return (
+                 <div className="flex justify-between w-full">
+                    <Button variant="outline" onClick={() => setStep(s => s - 1)}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                    </Button>
+                     <Button onClick={() => handleGenerateForm(true)}>
+                         <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+                    </Button>
+                </div>
+             );
+         }
+         
+         if (step === 4) { // Preview screen
+             return (
+                 <div className="w-full">
+                    <p className="text-xs text-muted-foreground mb-4 text-center">Review the generated form. You can accept it, ask the AI to make changes, or start over.</p>
+                    <div className="flex justify-between w-full flex-wrap gap-2">
+                        <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isPending}>
+                            <XCircle className="mr-2 h-4 w-4" /> Discard and Return
+                        </Button>
+                        <div className="flex gap-2">
+                             <Button variant="outline" onClick={() => handleGenerateForm(true)} disabled={isPending}>
+                                <RefreshCw className="mr-2 h-4 w-4" /> Generate New Version
+                            </Button>
+                            <Button variant="secondary" disabled={isPending}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit With AI
+                            </Button>
+                             <Button onClick={handleAcceptForm} disabled={isPending}>
+                                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Use This Form
+                            </Button>
+                        </div>
+                    </div>
+                 </div>
+             )
+         }
+
+        // Default navigation for steps 1 & 2
+        return (
+             <div className="flex justify-between w-full">
+                <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1 || isLoading}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+                
+                {step === 1 ? (
+                    <Button onClick={handleNextStep} disabled={isLoading}>
+                        Next <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                ) : step === 2 ? (
+                    <Button onClick={() => handleGenerateForm(false)} disabled={isLoading}>
+                        <Bot className="mr-2 h-4 w-4" />
+                        Generate My Application Form
+                    </Button>
+                ) : null}
+            </div>
+        )
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-3xl">
+            <DialogContent className="sm:max-w-4xl md:max-w-6xl">
                 <DialogHeader>
                     <DialogTitle className="font-headline text-xl">AI Application Form Wizard</DialogTitle>
-                    {step === 1 && <DialogDescription>Choose what you want to include in your job application. You can also choose which fields are required.</DialogDescription>}
-                    {step === 2 && <DialogDescription>Optional: Tell the AI how you’d like your application to sound or if you want any additional questions included.</DialogDescription>}
+                    {step < 3 && <DialogDescription>Step {step} of 2 - {step === 1 ? 'Select the application fields.' : 'Add any custom instructions (Optional).'}</DialogDescription>}
+                    {step === 4 && <DialogDescription>Step 3 of 3 - Review your application.</DialogDescription>}
                 </DialogHeader>
                 
                 <div className="py-4">
@@ -223,26 +409,7 @@ export function AiFormBuilderDialog({ isOpen, onOpenChange, companyName, onFormG
                 </div>
 
                 <DialogFooter>
-                    <div className="flex justify-between w-full">
-                        <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 1 || isLoading}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                        </Button>
-                        
-                        {step === 1 ? (
-                            <Button onClick={handleNextStep} disabled={isLoading}>
-                                Next <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        ) : step === 2 ? (
-                            <Button onClick={handleGenerateForm} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Generate My Application Form <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        ) : (
-                           <Button onClick={() => { /* Placeholder for final action */ }} disabled={isLoading}>
-                                Use This Form
-                            </Button>
-                        )}
-                    </div>
+                    {renderFooter()}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
